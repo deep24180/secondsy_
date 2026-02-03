@@ -9,9 +9,10 @@ export default function VerifyPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
+  const [seconds, setSeconds] = useState(59);
   const inputsRef = useRef<HTMLInputElement[]>([]);
 
-  // Load email from login step
+  // Load email
   useEffect(() => {
     const savedEmail = localStorage.getItem("otp_email");
     if (!savedEmail) {
@@ -20,6 +21,15 @@ export default function VerifyPage() {
     }
     setEmail(savedEmail);
   }, [router]);
+
+  // Countdown (seconds only)
+  useEffect(() => {
+    if (seconds === 0) return;
+    const timer = setInterval(() => {
+      setSeconds((s) => s - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [seconds]);
 
   const handleChange = (value: string, index: number) => {
     if (!/^\d?$/.test(value)) return;
@@ -39,10 +49,8 @@ export default function VerifyPage() {
     }
   };
 
-  // Verify OTP
   const verifyOtp = async () => {
     const token = otp.join("");
-
     if (token.length !== 6) {
       alert("Enter 6-digit OTP");
       return;
@@ -67,36 +75,43 @@ export default function VerifyPage() {
     router.push("/dashboard");
   };
 
-  // Resend OTP
   const resendOtp = async () => {
-    if (!email) return;
-
+    if (!email || seconds > 0) return;
     await supabase.auth.signInWithOtp({ email });
-    alert("OTP resent");
+    setSeconds(59);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f7f8] px-4">
-      <div className="w-full max-w-[480px] bg-white rounded-xl shadow-lg border border-slate-200 p-8 md:p-12">
-        {/* Header */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-            <span className="material-symbols-outlined text-blue-600 text-3xl">
-              mark_email_unread
-            </span>
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex">
+        {/* LEFT IMAGE */}
+        <div className="hidden md:flex w-1/2 bg-blue-50 items-center justify-center p-10">
+          <div className="text-center">
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2gb1rsQlS-psBvphskG-RcFJwQzxDV6arGizuEKXKNpZxIXfQ7k512DmuKDbbGq_22O2jGrUz1h-y9wa4actsdMTT5orXeF5X6pMm2URj9AnHMWFNpoi8YgwdiT89Eh_2NVl446bWFxodMN4aYpZpq0TI1WCP1PQvfYjmF_72wY3LnsEDpadP2IwtM01OBOSp-WxilrbZr05J3uqfTjkj9tATwVtUrFYgpfL41iPonsE7Wi1yi0DR94kkhhaIMyDdhpZOv-HpfGw"
+              alt="Secure verification"
+              className="max-w-xs rounded-xl mb-6 mx-auto"
+            />
+            <h2 className="text-2xl font-bold text-slate-900">
+              Secure Verification
+            </h2>
+            <p className="text-slate-500 mt-2">
+              Keeping our marketplace safe for everyone.
+            </p>
           </div>
-
-          <h2 className="text-slate-900 text-2xl font-bold text-center">
-            OTP Verification
-          </h2>
-          <p className="text-slate-500 text-base mt-3 text-center">
-            Enter the 6-digit code sent to your email
-          </p>
         </div>
 
-        {/* OTP Inputs */}
-        <div className="flex justify-center mb-8">
-          <div className="flex gap-2 sm:gap-4">
+        {/* RIGHT FORM */}
+        <div className="w-full md:w-1/2 p-8 md:p-14 flex flex-col justify-center">
+          <h2 className="text-2xl font-bold text-slate-900">
+            Verify your account
+          </h2>
+          <p className="text-slate-500 mt-2 text-sm">
+            We’ve sent a 6-digit code to your email
+          </p>
+
+          {/* OTP INPUTS */}
+          <div className="flex justify-center gap-3 my-8">
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -104,42 +119,47 @@ export default function VerifyPage() {
                   if (el) inputsRef.current[index] = el;
                 }}
                 type="text"
-                inputMode="numeric"
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleChange(e.target.value, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                className="h-14 w-10 sm:w-12 text-center text-xl font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-14 w-12 rounded-full bg-slate-100 text-center text-xl font-bold text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ))}
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-col gap-4">
+          {/* VERIFY BUTTON */}
           <button
             onClick={verifyOtp}
             disabled={loading}
-            className="w-full h-12 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold shadow-md transition disabled:opacity-60"
+            className="w-full h-12 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition disabled:opacity-60"
           >
-            {loading ? "Verifying..." : "Verify OTP"}
+            {loading ? "Verifying..." : "Verify & Proceed"}
           </button>
 
-          <p className="text-center text-sm text-slate-500">
-            Didn&apos;t receive the code?
-            <button
-              onClick={resendOtp}
-              className="text-blue-600 font-bold ml-1 hover:underline"
-            >
-              Resend code
-            </button>
-          </p>
-        </div>
+          {/* RESEND (SECONDS ONLY) */}
+          <div className="mt-6 text-center text-sm text-slate-500">
+            Resend code in{" "}
+            <span className="text-blue-600 font-bold">
+              00:{seconds.toString().padStart(2, "0")}
+            </span>
+          </div>
 
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-center gap-2 text-slate-400 text-xs">
-          <span className="material-symbols-outlined text-sm">lock</span>
-          <span>Secure verification by C2C Shield</span>
+          <button
+            onClick={resendOtp}
+            disabled={seconds > 0}
+            className="mt-3 text-sm font-semibold text-blue-600 disabled:text-slate-400"
+          >
+            Resend Code
+          </button>
+
+          {/* BACK */}
+          <button
+            onClick={() => router.push("/auth/login")}
+            className="mt-8 text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center gap-2"
+          >
+            ← Back to Login
+          </button>
         </div>
       </div>
     </div>
