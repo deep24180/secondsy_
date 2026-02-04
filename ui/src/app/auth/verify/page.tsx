@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { createUser } from "@/lib/api/user";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -12,7 +13,6 @@ export default function VerifyPage() {
   const [seconds, setSeconds] = useState(59);
   const inputsRef = useRef<HTMLInputElement[]>([]);
 
-  // Load email
   useEffect(() => {
     const savedEmail = localStorage.getItem("otp_email");
     if (!savedEmail) {
@@ -22,7 +22,6 @@ export default function VerifyPage() {
     setEmail(savedEmail);
   }, [router]);
 
-  // Countdown (seconds only)
   useEffect(() => {
     if (seconds === 0) return;
     const timer = setInterval(() => {
@@ -64,13 +63,24 @@ export default function VerifyPage() {
       type: "email",
     });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       alert(error.message);
       return;
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      await createUser({
+        supabaseId: user.id,
+        email: user.email!,
+      });
+    }
+
+    setLoading(false);
     localStorage.removeItem("otp_email");
     router.push("/dashboard");
   };
@@ -84,7 +94,6 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f7f8] px-4">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex">
-        {/* LEFT IMAGE */}
         <div className="hidden md:flex w-1/2 bg-blue-50 items-center justify-center p-10">
           <div className="text-center">
             <img
@@ -101,7 +110,6 @@ export default function VerifyPage() {
           </div>
         </div>
 
-        {/* RIGHT FORM */}
         <div className="w-full md:w-1/2 p-8 md:p-14 flex flex-col justify-center">
           <h2 className="text-2xl font-bold text-slate-900">
             Verify your account
@@ -110,7 +118,6 @@ export default function VerifyPage() {
             We’ve sent a 6-digit code to your email
           </p>
 
-          {/* OTP INPUTS */}
           <div className="flex justify-center gap-3 my-8">
             {otp.map((digit, index) => (
               <input
@@ -128,7 +135,6 @@ export default function VerifyPage() {
             ))}
           </div>
 
-          {/* VERIFY BUTTON */}
           <button
             onClick={verifyOtp}
             disabled={loading}
@@ -137,7 +143,6 @@ export default function VerifyPage() {
             {loading ? "Verifying..." : "Verify & Proceed"}
           </button>
 
-          {/* RESEND (SECONDS ONLY) */}
           <div className="mt-6 text-center text-sm text-slate-500">
             Resend code in{" "}
             <span className="text-blue-600 font-bold">
@@ -153,7 +158,6 @@ export default function VerifyPage() {
             Resend Code
           </button>
 
-          {/* BACK */}
           <button
             onClick={() => router.push("/auth/login")}
             className="mt-8 text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center gap-2"
