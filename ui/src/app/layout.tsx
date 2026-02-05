@@ -1,5 +1,8 @@
 // src/app/layout.tsx
+import { UserProvider } from "@/context/user-context";
 import "./globals.css";
+import Header from "@/components/dashboard/Header";
+import Footer from "@/components/dashboard/Footer";
 
 export default function RootLayout({
   children,
@@ -15,7 +18,11 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background-light font-display text-slate-900">
-        {children}
+        <UserProvider>
+          <Header />
+          {children}
+          <Footer />
+        </UserProvider>
       </body>
     </html>
   );

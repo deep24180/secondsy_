@@ -2,8 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Header from "./Header";
-import Footer from "./Footer";
+
 import CategoriesSection from "./CategoriesSection";
 import ProductCard from "./ProductCard";
 import { products } from "@/data/ products";
@@ -39,7 +38,7 @@ export default function Dashboard() {
           }, 1000);
         }
       },
-      { threshold: 1 }
+      { threshold: 1 },
     );
 
     observer.observe(loaderRef.current);
@@ -49,8 +48,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <CategoriesSection />
 
@@ -77,8 +74,6 @@ export default function Dashboard() {
           )}
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

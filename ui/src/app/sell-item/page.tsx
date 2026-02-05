@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { UserContext } from "@/context/user-context";
+import { createProduct } from "@/lib/api/product";
+import { useState, ChangeEvent, useContext } from "react";
 
 /* ================= TYPES ================= */
 
 type ConditionType = "New" | "Like New" | "Good" | "Fair";
 
-interface SellFormData {
+export type SellFormData = {
   title: string;
   category: string;
   subcategory: string;
-  price: string;
+  price: number | "";
   condition: ConditionType | "";
   description: string;
   email: string;
@@ -18,7 +20,7 @@ interface SellFormData {
   location: string;
   deliveryPickup: boolean;
   deliveryShipping: boolean;
-}
+};
 
 type CategoryMap = Record<string, string[]>;
 
@@ -29,7 +31,7 @@ export default function SellPage() {
     title: "",
     category: "",
     subcategory: "",
-    price: "",
+    price: 0,
     condition: "",
     description: "",
     email: "",
@@ -40,6 +42,8 @@ export default function SellPage() {
   });
 
   const [images, setImages] = useState<File[]>([]);
+
+  const { accessToken } = useContext(UserContext);
 
   /* ================= CONSTANTS ================= */
 
@@ -56,10 +60,10 @@ export default function SellPage() {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const target = e.target;
+    const { name, value, type } = target;
 
-    const { name, value } = target;
-
-    if (target.type === "checkbox") {
+    // checkbox handling
+    if (type === "checkbox") {
       setFormData((prev) => ({
         ...prev,
         [name]: (target as HTMLInputElement).checked,
@@ -67,6 +71,15 @@ export default function SellPage() {
       return;
     }
 
+    if (name === "price") {
+      setFormData((prev) => ({
+        ...prev,
+        price: value === "" ? "" : Number(value),
+      }));
+      return;
+    }
+
+    // default
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -84,9 +97,14 @@ export default function SellPage() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    console.log("POST AD 👉", { ...formData, images });
+    if (!accessToken) {
+      alert("You must be logged in to post an item.");
+      return;
+    }
+    const data = await createProduct(formData, accessToken);
+    console.log(data);
   };
 
   /* ================= UI ================= */
@@ -194,7 +212,7 @@ export default function SellPage() {
                       <p className="font-bold">{item}</p>
                     </div>
                   </label>
-                )
+                ),
               )}
             </div>
           </section>
@@ -324,6 +342,7 @@ export default function SellPage() {
           {/* ================= ACTION ================= */}
           <button
             type="submit"
+            onClick={handleSubmit}
             className="w-full h-14 rounded-2xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition shadow-lg"
           >
             Publish Advertisement

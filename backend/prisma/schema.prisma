@@ -14,3 +14,21 @@ model User {
   email               String
   createdAt           DateTime    @default(now())
 }
+
+model Product {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  category         String
+  subcategory      String
+  price            Float
+  condition        String
+  description      String
+  images           String[]
+  email            String
+  phone            String
+  location         String
+  deliveryPickup   Boolean
+  deliveryShipping Boolean
+  userId           String
+  createdAt        DateTime @default(now())
+}
