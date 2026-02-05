@@ -82,7 +82,7 @@ export default function VerifyPage() {
 
     setLoading(false);
     localStorage.removeItem("otp_email");
-    router.push("/dashboard");
+    router.push("/ ");
   };
 
   const resendOtp = async () => {
@@ -105,7 +105,7 @@ export default function VerifyPage() {
               Secure Verification
             </h2>
             <p className="text-slate-500 mt-2">
-              Keeping our marketplace safe for everyone.
+              Keeping our Secondsy safe for everyone.
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
-import Login from "./auth/login/page";
+import Dashboard from "@/components/dashboard/dashboard";
 
 export default function Home() {
-  return <Login />;
+  return <Dashboard />;
 }

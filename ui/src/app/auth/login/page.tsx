@@ -16,7 +16,7 @@ export default function LoginPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
+      email: email.trim(), 
     });
 
     setLoading(false);
@@ -38,7 +38,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}`,
       },
     });
 
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <div className="text-center px-10">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXb3dOic5cMdl5xW5lIVTVvpeuJkC-7PeqGKt2SFkBOowiZl3RwX7BNrvOoXLCuaye4-wJ1OQyvThi9AbaztONe0GUwpeDzoUbi63De9QxFxBVOWsYOdbqrnI9ZILBOV1G8qI3mssVCw5p4FnYCix4uRfgUSqvVccK6KjhWKHj0cObo9iKWewMLB90OGPkH3jUe5LnuO80tuYao0u-AENvGJpP3Ft3Y6-0lb_2v71A_vOxHmY_6YD6apnfNSt4ML3BG0nwnm3NcBw"
-            alt="Marketplace"
+            alt="Secondsy"
             className="rounded-xl mb-6 max-w-xs mx-auto"
           />
           <h2 className="text-2xl font-bold text-slate-900">

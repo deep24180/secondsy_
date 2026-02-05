@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import "./globals.css";
 
 export default function RootLayout({
@@ -7,7 +8,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-background-light font-display text-slate-900">
+        {children}
+      </body>
     </html>
   );
 }
