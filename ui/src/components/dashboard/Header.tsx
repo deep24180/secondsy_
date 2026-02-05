@@ -1,8 +1,21 @@
-// src/components/Header.tsx
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const isLoggedIn = true; //  later replace with real auth state
+  const router = useRouter();
+
+  const isLoggedIn = true; // 🔁 later replace with real auth state
+
+  const handleSellClick = () => {
+    if (!isLoggedIn) {
+      router.push("/auth/login");
+      return;
+    }
+
+    router.push("/sell-item");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
@@ -19,7 +32,10 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100">
+          <button
+            onClick={handleSellClick}
+            className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
+          >
             Sell Item
           </button>
 
