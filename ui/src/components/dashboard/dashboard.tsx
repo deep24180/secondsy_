@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import CategoriesSection from "./CategoriesSection";
 import ProductCard from "./ProductCard";
-import { products } from "@/data/ products";
+import { products } from "@/data/products";
 
 const PRODUCTS_PER_PAGE = 8;
 
