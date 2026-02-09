@@ -3,6 +3,8 @@
 import { UserContext } from "@/context/user-context";
 import { createProduct } from "@/lib/api/product";
 import { useState, ChangeEvent, useContext } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 /* ================= TYPES ================= */
 
@@ -55,6 +57,33 @@ export default function SellPage() {
   };
 
   /* ================= HANDLERS ================= */
+  const validateRequiredFields = (data: SellFormData) => {
+    const {
+      title,
+      category,
+      price,
+      condition,
+      description,
+      email,
+      phone,
+      location,
+    } = data;
+
+    if (
+      !title ||
+      !category ||
+      price === "" ||
+      !condition ||
+      !description ||
+      !email ||
+      !phone ||
+      !location
+    ) {
+      return false;
+    }
+
+    return true;
+  };
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -99,13 +128,37 @@ export default function SellPage() {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+
     if (!accessToken) {
-      alert("You must be logged in to post an item.");
+      toast.error("You must be logged in to post an item.");
       return;
     }
-    const data = await createProduct(formData, accessToken);
-    console.log(data);
+
+    if (!validateRequiredFields(formData)) {
+      toast.warning("Please fill all required fields");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!PHONE_REGEX.test(formData.phone)) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    try {
+      await createProduct(formData, accessToken);
+      toast.success("Advertisement posted successfully ");
+    } catch (error) {
+      toast.error("Failed to post advertisement. Try again.");
+    }
   };
+
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const PHONE_REGEX = /^[6-9]\d{9}$/; // Indian 10-digit numbers
 
   /* ================= UI ================= */
 
@@ -114,6 +167,8 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 py-16 px-4">
+      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-extrabold text-slate-900 mb-2">
           Post New Advertisement
@@ -140,6 +195,7 @@ export default function SellPage() {
                 onChange={handleChange}
                 placeholder="Item title"
                 className={inputClass}
+                required
               />
 
               <div className="grid md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border">
@@ -148,6 +204,7 @@ export default function SellPage() {
                   value={formData.category}
                   onChange={handleChange}
                   className={inputClass}
+                  required
                 >
                   <option value="">Select category</option>
                   {Object.keys(CATEGORY_MAP).map((cat) => (
@@ -185,6 +242,7 @@ export default function SellPage() {
                   onChange={handleChange}
                   placeholder="Price"
                   className={inputClass}
+                  required
                 />
               </div>
             </div>
@@ -207,6 +265,7 @@ export default function SellPage() {
                       value={item}
                       onChange={handleChange}
                       className="peer hidden"
+                      required
                     />
                     <div className="rounded-2xl border p-5 text-center shadow-sm hover:shadow-md peer-checked:border-blue-600 peer-checked:bg-blue-50 transition">
                       <p className="font-bold">{item}</p>
@@ -230,6 +289,7 @@ export default function SellPage() {
               onChange={handleChange}
               placeholder="Describe your item in detail"
               className="w-full min-h-[160px] rounded-xl border border-slate-300 bg-white p-4 shadow-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition"
+              required
             />
           </section>
 
