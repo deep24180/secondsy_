@@ -35,7 +35,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "src/components/dashboard/CategoriesSection.tsx"  ],
+, "src/components/category/CategoriesSection.tsx"  ],
   "exclude": [
     "node_modules"
   ]

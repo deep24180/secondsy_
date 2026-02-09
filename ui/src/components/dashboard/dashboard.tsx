@@ -1,21 +1,35 @@
-// src/app/page.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 
-import CategoriesSection from "./CategoriesSection";
-import ProductCard from "./ProductCard";
-import { products } from "@/data/products";
+import CategoriesSection from "../category/CategoriesSection";
+import ProductCard, { Product } from "../product/ProductCard";
+import { getProducts } from "@/lib/api/product";
 
-const PRODUCTS_PER_PAGE = 8;
+const PRODUCTS_PER_PAGE = 8
 
 export default function Dashboard() {
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
   const visibleProducts = products.slice(0, visibleCount);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const products = await getProducts();
+        console.log(products);
+        setProducts(products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (!loaderRef.current) return;
@@ -45,6 +59,7 @@ export default function Dashboard() {
 
     return () => observer.disconnect();
   }, [isLoading, visibleCount]);
+  console.log(products);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -56,8 +71,8 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold mb-6">Recent Listings</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {visibleProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
