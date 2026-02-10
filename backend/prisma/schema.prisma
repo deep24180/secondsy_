@@ -29,6 +29,7 @@ model Product {
   location         String
   deliveryPickup   Boolean
   deliveryShipping Boolean
+  status           String   @default("Active")
   userId           String
   createdAt        DateTime @default(now())
 }

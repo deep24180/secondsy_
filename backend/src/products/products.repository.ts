@@ -26,4 +26,19 @@ export class ProductsRepository {
       where: { id },
     });
   }
+
+  async updateStatusById(id: string, userId: string, status: string) {
+    const result = await this.prisma.product.updateMany({
+      where: { id, userId },
+      data: { status },
+    });
+
+    if (result.count === 0) {
+      return null;
+    }
+
+    return this.prisma.product.findUnique({
+      where: { id },
+    });
+  }
 }

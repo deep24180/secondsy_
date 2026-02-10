@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -14,11 +14,26 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { getProducts, updateProductStatus } from "@/lib/api/product";
+import { UserContext } from "@/context/user-context";
 
 type Status = "Active" | "Sold" | "Expired";
+type Ad = {
+  id: string;
+  title: string;
+  price: number;
+  status: Status;
+  views: number;
+  likes: number;
+  images: string[];
+  location: string;
+  createdAt: string;
+  userId: string;
+};
 
 export default function MyAdsPage() {
   const router = useRouter();
+  const { user, logout, accessToken } = useContext(UserContext);
 
   const [activeTab, setActiveTab] = useState<
     "All" | "Active" | "Sold" | "Expired"
@@ -27,36 +42,56 @@ export default function MyAdsPage() {
   const [page, setPage] = useState(1);
   const PER_PAGE = 2;
 
-  const [ads, setAds] = useState([
-    {
-      id: 1,
-      title: "Vintage Leather Jacket",
-      price: "$120.00",
-      status: "Active" as Status,
-      views: 245,
-      likes: 12,
-    },
-    {
-      id: 2,
-      title: "Ergonomic Office Chair",
-      price: "$75.00",
-      status: "Sold" as Status,
-    },
-    {
-      id: 3,
-      title: "Acoustic Guitar",
-      price: "$250.00",
-      status: "Active" as Status,
-      views: 112,
-      likes: 4,
-    },
-    {
-      id: 4,
-      title: "Gaming Desk",
-      price: "$180.00",
-      status: "Expired" as Status,
-    },
-  ]);
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [loadingAds, setLoadingAds] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadAds = async () => {
+      if (!user?.id) {
+        setAds([]);
+        setLoadingAds(false);
+        return;
+      }
+
+      setLoadingAds(true);
+      setError(null);
+
+      try {
+        const response = await getProducts();
+        const products = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+            ? response
+            : [];
+
+        const mappedAds = products
+          .filter((product: any) => product.userId === user.id)
+          .map((product: any) => ({
+            id: product.id,
+            title: product.title,
+            price: Number(product.price) || 0,
+            status: (product.status as Status) || "Active",
+            views: 0,
+            likes: 0,
+            images: Array.isArray(product.images) ? product.images : [],
+            location: product.location || "",
+            createdAt: product.createdAt || "",
+            userId: product.userId,
+          }));
+
+        setAds(mappedAds);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load products.",
+        );
+      } finally {
+        setLoadingAds(false);
+      }
+    };
+
+    loadAds();
+  }, [user?.id]);
 
   const card =
     "bg-white rounded-xl border shadow-sm hover:shadow-md transition";
@@ -100,32 +135,69 @@ export default function MyAdsPage() {
 
   const canShowStats = (status: Status) => status === "Active";
 
-  const filteredAds =
-    activeTab === "All" ? ads : ads.filter((ad) => ad.status === activeTab);
+  const filteredAds = useMemo(
+    () =>
+      activeTab === "All" ? ads : ads.filter((ad) => ad.status === activeTab),
+    [activeTab, ads],
+  );
 
-  const totalPages = Math.ceil(filteredAds.length / PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredAds.length / PER_PAGE));
 
   const paginatedAds = filteredAds.slice(
     (page - 1) * PER_PAGE,
     page * PER_PAGE,
   );
 
-  const markSold = (id: number) =>
+  const markSold = async (id: string) => {
+    if (!accessToken) return;
+    await updateProductStatus(id, "Sold", accessToken);
     setAds((prev) =>
       prev.map((ad) => (ad.id === id ? { ...ad, status: "Sold" } : ad)),
     );
+  };
 
-  const relist = (id: number) =>
+  const relist = async (id: string) => {
+    if (!accessToken) return;
+    await updateProductStatus(id, "Active", accessToken);
     setAds((prev) =>
       prev.map((ad) => (ad.id === id ? { ...ad, status: "Active" } : ad)),
     );
+  };
 
-  const remove = (id: number) =>
+  const remove = (id: string) =>
     setAds((prev) => prev.filter((ad) => ad.id !== id));
 
   const changeTab = (tab: "All" | "Active" | "Sold" | "Expired") => {
     setActiveTab(tab);
     setPage(1);
+  };
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price);
+
+  const formatDate = (value: string) => {
+    if (!value) return "Unknown date";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "Unknown date";
+    return parsed.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/auth/login");
   };
 
   return (
@@ -136,17 +208,22 @@ export default function MyAdsPage() {
           <div className="flex items-center gap-3 border-b pb-4">
             <div className="w-12 h-12 rounded-full bg-gray-200" />
             <div>
-              <p className="font-bold text-sm">John Doe</p>
-              <p className="text-xs text-gray-500">Verified Seller</p>
+              <p className="font-bold text-sm">{user?.email ?? "Guest"}</p>
+              <p className="text-xs text-gray-500">Status: Active</p>
             </div>
           </div>
 
           <nav className="mt-6 space-y-1">
-            {["My Ads", "Messages", "Profile", "Sign Out"].map((item) => (
-              <div key={item} className={getNavClass(item)}>
-                {item}
-              </div>
-            ))}
+            <div className={getNavClass("My Ads")}>My Ads</div>
+            <div className={getNavClass("Messages")}>Messages</div>
+            <div className={getNavClass("Profile")}>Profile</div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={getNavClass("Sign Out")}
+            >
+              Sign Out
+            </button>
           </nav>
         </aside>
 
@@ -160,7 +237,7 @@ export default function MyAdsPage() {
             </div>
 
             <Button
-              onClick={() => router.push("/sell")}
+              onClick={() => router.push("/sell-item")}
               type="button"
               variant="default"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow flex items-center gap-2 w-fit"
@@ -186,81 +263,108 @@ export default function MyAdsPage() {
             ))}
           </div>
 
-          {paginatedAds.map((ad) => (
-            <div key={ad.id} className={getCardClass(ad.status)}>
-              <div className="w-full sm:w-48 h-40 sm:h-32 rounded-lg bg-gray-200" />
+          {loadingAds && (
+            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-gray-500">
+              Loading your ads...
+            </div>
+          )}
 
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-                  <div>
-                    <span className={getBadgeClass(ad.status)}>
-                      {ad.status}
-                    </span>
+          {!loadingAds && error && (
+            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
-                    <h3 className="text-lg font-bold mt-1">{ad.title}</h3>
+          {!loadingAds && !error && paginatedAds.length === 0 && (
+            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-gray-500">
+              No ads yet. Create your first listing.
+            </div>
+          )}
 
-                    <p className={getPriceClass(ad.status)}>{ad.price}</p>
+          {!loadingAds &&
+            !error &&
+            paginatedAds.map((ad) => (
+              <div key={ad .id} className={getCardClass(ad.status)}>
+                <div className="w-full sm:w-48 h-40 sm:h-32 rounded-lg bg-gray-200" />
+
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+                    <div>
+                      <span className={getBadgeClass(ad.status)}>
+                        {ad.status}
+                      </span>
+
+                      <h3 className="text-lg font-bold mt-1">{ad.title}</h3>
+
+                      <p className="text-xs text-gray-500">
+                        {(ad.location || "Unknown location") + " • "}
+                        {formatDate(ad.createdAt)}
+                      </p>
+
+                      <p className={getPriceClass(ad.status)}>
+                        {formatPrice(ad.price)}
+                      </p>
+                    </div>
+
+                    {canShowStats(ad.status) && (
+                      <div className="text-sm text-gray-500 flex gap-4 items-center">
+                        <span className="flex items-center gap-1">
+                          <Eye size={16} /> {ad.views}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart size={16} /> {ad.likes}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {canShowStats(ad.status) && (
-                    <div className="text-sm text-gray-500 flex gap-4 items-center">
-                      <span className="flex items-center gap-1">
-                        <Eye size={16} /> {ad.views}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart size={16} /> {ad.likes}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {ad.status === "Active" && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className={`flex-1 ${softBtn}`}
+                        >
+                          <Edit3 size={16} />
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => markSold(ad.id)}
+                          type="button"
+                          variant="ghost"
+                          className={`flex-1 ${softBtn}`}
+                        >
+                          <CheckCircle size={16} />
+                          Sold
+                        </Button>
+                      </>
+                    )}
 
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {ad.status === "Active" && (
-                    <>
+                    {ad.status === "Sold" && (
                       <Button
+                        onClick={() => relist(ad.id)}
                         type="button"
                         variant="ghost"
                         className={`flex-1 ${softBtn}`}
                       >
-                        <Edit3 size={16} />
-                        Edit
+                        <RotateCcw size={16} />
+                        Relist
                       </Button>
-                      <Button
-                        onClick={() => markSold(ad.id)}
-                        type="button"
-                        variant="ghost"
-                        className={`flex-1 ${softBtn}`}
-                      >
-                        <CheckCircle size={16} />
-                        Sold
-                      </Button>
-                    </>
-                  )}
+                    )}
 
-                  {ad.status === "Sold" && (
                     <Button
-                      onClick={() => relist(ad.id)}
+                      onClick={() => remove(ad.id)}
                       type="button"
                       variant="ghost"
-                      className={`flex-1 ${softBtn}`}
+                      className={dangerBtn}
                     >
-                      <RotateCcw size={16} />
-                      Relist
+                      <Trash2 size={16} />
                     </Button>
-                  )}
-
-                  <Button
-                    onClick={() => remove(ad.id)}
-                    type="button"
-                    variant="ghost"
-                    className={dangerBtn}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
           <div className="flex justify-center gap-2 pt-4 flex-wrap">
             <Button

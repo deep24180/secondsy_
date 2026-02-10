@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -10,6 +11,7 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
+import { UpdateProductStatusDto } from './dto/update-product-status.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -29,5 +31,16 @@ export class ProductsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @UseGuards(SupabaseAuthGuard)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductStatusDto,
+    @Req() req,
+  ) {
+    const supabaseId = req.user.sub;
+    return this.productsService.updateStatus(id, supabaseId, dto.status);
   }
 }

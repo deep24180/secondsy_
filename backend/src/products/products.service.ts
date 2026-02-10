@@ -23,4 +23,18 @@ export class ProductsService {
 
     return product;
   }
+
+  async updateStatus(id: string, userId: string, status: string) {
+    const product = await this.productsRepo.updateStatusById(
+      id,
+      userId,
+      status,
+    );
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
+  }
 }

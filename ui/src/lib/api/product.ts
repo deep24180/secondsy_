@@ -61,3 +61,30 @@ export const getProductById = async (id: string) => {
     throw error;
   }
 };
+
+export const updateProductStatus = async (
+  id: string,
+  status: "Active" | "Sold" | "Expired",
+  accessToken: string,
+) => {
+  try {
+    const response = await fetch(`${API_URL}/products/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error while updating product status:", error);
+    throw error;
+  }
+};

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { signOut, supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
 type UserContextType = {
@@ -45,7 +45,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setLoading(true);
 
-    await supabase.auth.signOut();
+    await signOut();
 
     setUser(null);
     setLoading(false);
