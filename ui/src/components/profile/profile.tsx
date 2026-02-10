@@ -13,21 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Button } from "../ui/button";
 
-/* =======================
-   TYPES
-======================= */
 type Status = "Active" | "Sold" | "Expired";
 
-/* =======================
-   COMPONENT
-======================= */
 export default function MyAdsPage() {
   const router = useRouter();
 
-  /* =======================
-     STATE
-  ======================= */
   const [activeTab, setActiveTab] = useState<
     "All" | "Active" | "Sold" | "Expired"
   >("All");
@@ -66,9 +58,6 @@ export default function MyAdsPage() {
     },
   ]);
 
-  /* =======================
-     BASE CLASSES
-  ======================= */
   const card =
     "bg-white rounded-xl border shadow-sm hover:shadow-md transition";
   const softBtn =
@@ -76,9 +65,6 @@ export default function MyAdsPage() {
   const dangerBtn =
     "w-10 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center";
 
-  /* =======================
-     HELPERS (NO JSX LOGIC)
-  ======================= */
   const getNavClass = (item: string) =>
     `px-4 py-3 rounded-lg cursor-pointer ${
       item === "My Ads"
@@ -124,9 +110,6 @@ export default function MyAdsPage() {
     page * PER_PAGE,
   );
 
-  /* =======================
-     ACTIONS
-  ======================= */
   const markSold = (id: number) =>
     setAds((prev) =>
       prev.map((ad) => (ad.id === id ? { ...ad, status: "Sold" } : ad)),
@@ -145,9 +128,6 @@ export default function MyAdsPage() {
     setPage(1);
   };
 
-  /* =======================
-     UI
-  ======================= */
   return (
     <div className="min-h-screen bg-[#f6f7f8] flex justify-center py-4 sm:py-6 lg:py-8">
       <div className="w-full max-w-[1200px] flex flex-col lg:flex-row gap-6 lg:gap-8 px-4 sm:px-6">
@@ -170,9 +150,7 @@ export default function MyAdsPage() {
           </nav>
         </aside>
 
-        {/* MAIN */}
         <main className="flex-1 space-y-6">
-          {/* HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-extrabold">My Ads</h1>
@@ -181,31 +159,33 @@ export default function MyAdsPage() {
               </p>
             </div>
 
-            <button
+            <Button
               onClick={() => router.push("/sell")}
+              type="button"
+              variant="default"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow flex items-center gap-2 w-fit"
             >
               <Plus size={18} />
               Post New Ad
-            </button>
+            </Button>
           </div>
 
-          {/* TABS */}
           <div className="flex gap-6 sm:gap-8 border-b overflow-x-auto">
             {["All", "Active", "Sold", "Expired"].map((tab) => (
-              <button
+              <Button
                 key={tab}
                 onClick={() =>
                   changeTab(tab as "All" | "Active" | "Sold" | "Expired")
                 }
+                type="button"
+                variant="ghost"
                 className={getTabClass(tab)}
               >
                 {tab}
-              </button>
+              </Button>
             ))}
           </div>
 
-          {/* ADS */}
           {paginatedAds.map((ad) => (
             <div key={ad.id} className={getCardClass(ad.status)}>
               <div className="w-full sm:w-48 h-40 sm:h-32 rounded-lg bg-gray-200" />
@@ -237,59 +217,77 @@ export default function MyAdsPage() {
                 <div className="flex flex-wrap gap-2 mt-3">
                   {ad.status === "Active" && (
                     <>
-                      <button className={`flex-1 ${softBtn}`}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className={`flex-1 ${softBtn}`}
+                      >
                         <Edit3 size={16} />
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => markSold(ad.id)}
+                        type="button"
+                        variant="ghost"
                         className={`flex-1 ${softBtn}`}
                       >
                         <CheckCircle size={16} />
                         Sold
-                      </button>
+                      </Button>
                     </>
                   )}
 
                   {ad.status === "Sold" && (
-                    <button
+                    <Button
                       onClick={() => relist(ad.id)}
+                      type="button"
+                      variant="ghost"
                       className={`flex-1 ${softBtn}`}
                     >
                       <RotateCcw size={16} />
                       Relist
-                    </button>
+                    </Button>
                   )}
 
-                  <button onClick={() => remove(ad.id)} className={dangerBtn}>
+                  <Button
+                    onClick={() => remove(ad.id)}
+                    type="button"
+                    variant="ghost"
+                    className={dangerBtn}
+                  >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* PAGINATION */}
           <div className="flex justify-center gap-2 pt-4 flex-wrap">
-            <button
+            <Button
+              title="Previous page"
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
+              type="button"
+              variant="outline"
               className="w-10 h-10 rounded-lg border flex items-center justify-center disabled:opacity-40"
             >
               <ChevronLeft size={18} />
-            </button>
+            </Button>
 
             <span className="w-10 h-10 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center">
               {page}
             </span>
 
-            <button
+            <Button
+              title="Next page"
               disabled={page === totalPages}
               onClick={() => setPage((p) => p + 1)}
+              type="button"
+              variant="outline"
               className="w-10 h-10 rounded-lg border flex items-center justify-center disabled:opacity-40"
             >
               <ChevronRight size={18} />
-            </button>
+            </Button>
           </div>
         </main>
       </div>

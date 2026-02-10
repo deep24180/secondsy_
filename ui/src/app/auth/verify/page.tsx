@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { createUser } from "@/lib/api/user";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -120,7 +122,7 @@ export default function VerifyPage() {
 
           <div className="flex justify-center gap-3 my-8">
             {otp.map((digit, index) => (
-              <input
+              <Input
                 key={index}
                 ref={(el) => {
                   if (el) inputsRef.current[index] = el;
@@ -135,13 +137,13 @@ export default function VerifyPage() {
             ))}
           </div>
 
-          <button
+          <Button
             onClick={verifyOtp}
             disabled={loading}
             className="w-full h-12 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition disabled:opacity-60"
           >
             {loading ? "Verifying..." : "Verify & Proceed"}
-          </button>
+          </Button>
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Resend code in{" "}
@@ -150,20 +152,20 @@ export default function VerifyPage() {
             </span>
           </div>
 
-          <button
+          <Button
             onClick={resendOtp}
             disabled={seconds > 0}
             className="mt-3 text-sm font-semibold text-blue-600 disabled:text-slate-400"
           >
             Resend Code
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => router.push("/auth/login")}
             className="mt-8 text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center gap-2"
           >
             ← Back to Login
-          </button>
+          </Button>
         </div>
       </div>
     </div>

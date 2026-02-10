@@ -1,10 +1,18 @@
 "use client";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { UserContext } from "@/context/user-context";
 import { createProduct } from "@/lib/api/product";
 import { useState, ChangeEvent, useContext } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Input } from "@/components/ui/input";
 
 /* ================= TYPES ================= */
 
@@ -26,8 +34,6 @@ export type SellFormData = {
 
 type CategoryMap = Record<string, string[]>;
 
-/* ================= COMPONENT ================= */
-
 export default function SellPage() {
   const [formData, setFormData] = useState<SellFormData>({
     title: "",
@@ -47,8 +53,6 @@ export default function SellPage() {
 
   const { accessToken } = useContext(UserContext);
 
-  /* ================= CONSTANTS ================= */
-
   const CATEGORY_MAP: CategoryMap = {
     Electronics: ["Mobile", "Laptop", "Tablet", "Camera", "Accessories"],
     Vehicles: ["Car", "Bike", "Scooter", "Truck"],
@@ -56,7 +60,6 @@ export default function SellPage() {
     Fashion: ["Men", "Women", "Kids", "Footwear"],
   };
 
-  /* ================= HANDLERS ================= */
   const validateRequiredFields = (data: SellFormData) => {
     const {
       title,
@@ -158,9 +161,7 @@ export default function SellPage() {
   };
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const PHONE_REGEX = /^[6-9]\d{9}$/; // Indian 10-digit numbers
-
-  /* ================= UI ================= */
+  const PHONE_REGEX = /^[6-9]\d{9}$/;
 
   const inputClass =
     "w-full h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition";
@@ -181,7 +182,6 @@ export default function SellPage() {
           onSubmit={handleSubmit}
           className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 md:p-14 space-y-14"
         >
-          {/* ================= GENERAL INFO ================= */}
           <section>
             <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
               <span className="w-2 h-8 bg-blue-600 rounded-full" />
@@ -189,7 +189,7 @@ export default function SellPage() {
             </h3>
 
             <div className="space-y-6">
-              <input
+              <Input
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
@@ -199,43 +199,61 @@ export default function SellPage() {
               />
 
               <div className="grid md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border">
-                <select
-                  name="category"
+                <Select
                   value={formData.category}
-                  onChange={handleChange}
-                  className={inputClass}
-                  required
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      category: value,
+                      subcategory: "", // reset subcategory when category changes
+                    }))
+                  }
                 >
-                  <option value="">Select category</option>
-                  {Object.keys(CATEGORY_MAP).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className={inputClass}>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
 
-                <select
-                  name="subcategory"
-                  value={formData.subcategory}
-                  onChange={handleChange}
-                  disabled={!formData.category}
-                  className={`${inputClass} disabled:bg-slate-100`}
-                >
-                  <option value="">
-                    {formData.category
-                      ? "Select subcategory"
-                      : "Select category first"}
-                  </option>
-
-                  {formData.category &&
-                    CATEGORY_MAP[formData.category].map((sub) => (
-                      <option key={sub} value={sub}>
-                        {sub}
-                      </option>
+                  <SelectContent>
+                    {Object.keys(CATEGORY_MAP).map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
                     ))}
-                </select>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={formData.subcategory}
+                  disabled={!formData.category}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      subcategory: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger
+                    className={`${inputClass} disabled:bg-slate-100`}
+                  >
+                    <SelectValue
+                      placeholder={
+                        formData.category
+                          ? "Select subcategory"
+                          : "Select category first"
+                      }
+                    />
+                  </SelectTrigger>
 
-                <input
+                  <SelectContent>
+                    {formData.category &&
+                      CATEGORY_MAP[formData.category].map((sub) => (
+                        <SelectItem key={sub} value={sub}>
+                          {sub}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                <Input
                   type="number"
                   name="price"
                   value={formData.price}
@@ -259,7 +277,7 @@ export default function SellPage() {
               {(["New", "Like New", "Good", "Fair"] as ConditionType[]).map(
                 (item) => (
                   <label key={item} className="cursor-pointer">
-                    <input
+                    <Input
                       type="radio"
                       name="condition"
                       value={item}
@@ -323,13 +341,13 @@ export default function SellPage() {
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
-                  <button
+                  <Button
                     type="button"
                     onClick={() => removeImage(index)}
                     className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1 hover:bg-red-500 hover:text-white transition"
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -343,7 +361,7 @@ export default function SellPage() {
             </h3>
 
             <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border">
-              <input
+              <Input
                 type="email"
                 name="email"
                 value={formData.email}
@@ -370,7 +388,7 @@ export default function SellPage() {
 
             <div className="flex gap-6 mb-6">
               <label className="flex items-center gap-2">
-                <input
+                <Input
                   type="checkbox"
                   name="deliveryPickup"
                   checked={formData.deliveryPickup}
@@ -380,7 +398,7 @@ export default function SellPage() {
               </label>
 
               <label className="flex items-center gap-2">
-                <input
+                <Input
                   type="checkbox"
                   name="deliveryShipping"
                   checked={formData.deliveryShipping}
@@ -390,7 +408,7 @@ export default function SellPage() {
               </label>
             </div>
 
-            <input
+            <Input
               name="location"
               value={formData.location}
               onChange={handleChange}
@@ -399,14 +417,13 @@ export default function SellPage() {
             />
           </section>
 
-          {/* ================= ACTION ================= */}
-          <button
+          <Button
             type="submit"
             onClick={handleSubmit}
             className="w-full h-14 rounded-2xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition shadow-lg"
           >
             Publish Advertisement
-          </button>
+          </Button>
         </form>
       </div>
     </div>

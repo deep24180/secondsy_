@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -82,7 +84,7 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Email
               </label>
-              <input
+              <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
@@ -92,13 +94,13 @@ export default function LoginPage() {
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
               className="w-full h-12 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
             >
               {loading ? "Sending OTP..." : "Continue"}
-            </button>
+            </Button>
           </form>
 
           {/* OR */}
@@ -109,7 +111,7 @@ export default function LoginPage() {
           </div>
 
           {/* GOOGLE BUTTON */}
-          <button
+          <Button
             onClick={signInWithGoogle}
             className="w-full h-12 flex items-center justify-center gap-3 rounded-full border border-slate-200 text-sm font-semibold hover:bg-slate-50"
           >
@@ -132,7 +134,7 @@ export default function LoginPage() {
               />
             </svg>
             Continue with Google
-          </button>
+          </Button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Don’t have an account?{" "}

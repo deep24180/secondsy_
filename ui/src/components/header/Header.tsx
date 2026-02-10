@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Button } from "../ui/button";
 
 export default function Header() {
   const router = useRouter();
@@ -32,12 +33,13 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="outline"
             onClick={handleSellClick}
             className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
           >
             Sell Item
-          </button>
+          </Button>
 
           {!isLoggedIn ? (
             <Link
