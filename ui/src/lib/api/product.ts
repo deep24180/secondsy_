@@ -45,3 +45,19 @@ export const getProducts = async () => {
     throw error;
   }
 };
+
+export const getProductById = async (id: string) => {
+  try {
+    const response = await fetch(`${API_URL}/products/${id}`);
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error while fetching product:", error);
+    throw error;
+  }
+};
