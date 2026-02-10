@@ -113,6 +113,7 @@ export default function LoginPage() {
           {/* GOOGLE BUTTON */}
           <Button
             onClick={signInWithGoogle}
+            variant="outline"
             className="w-full h-12 flex items-center justify-center gap-3 rounded-full border border-slate-200 text-sm font-semibold hover:bg-slate-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 export default function Header() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function Header() {
         <h1 className="text-xl font-bold text-primary">Secondsy</h1>
 
         {/* Search */}
-        <input
+        <Input
           type="text"
           placeholder="Search for anything..."
           className="hidden md:block px-4 py-2 bg-slate-100 rounded-lg w-[400px]"

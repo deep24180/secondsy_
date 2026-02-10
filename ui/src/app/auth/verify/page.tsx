@@ -18,7 +18,7 @@ export default function VerifyPage() {
   useEffect(() => {
     const savedEmail = localStorage.getItem("otp_email");
     if (!savedEmail) {
-      router.push("/login");
+      router.push("/");
       return;
     }
     setEmail(savedEmail);
@@ -108,7 +108,7 @@ export default function VerifyPage() {
             </h2>
             <p className="text-slate-500 mt-2">
               Keeping our Secondsy safe for everyone.
-            </p>
+            </p>  
           </div>
         </div>
 
@@ -155,6 +155,7 @@ export default function VerifyPage() {
           <Button
             onClick={resendOtp}
             disabled={seconds > 0}
+            variant="outline"
             className="mt-3 text-sm font-semibold text-blue-600 disabled:text-slate-400"
           >
             Resend Code
@@ -162,6 +163,7 @@ export default function VerifyPage() {
 
           <Button
             onClick={() => router.push("/auth/login")}
+            variant="outline"
             className="mt-8 text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center gap-2"
           >
             ← Back to Login
