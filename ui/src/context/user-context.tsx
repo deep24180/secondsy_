@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { signOut, supabase } from "@/lib/supabase";
+import { signOut, supabase } from "../lib/supabase";
 import { User } from "@supabase/supabase-js";
 
 type UserContextType = {

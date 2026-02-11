@@ -1,4 +1,4 @@
-import { categories } from "@/data/categories";
+import { categories } from "../../data/categories";
 import CategoryCard from "./CategoryCard";
 
 export default function CategoriesSection() {

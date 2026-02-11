@@ -14,8 +14,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { getProducts, updateProductStatus } from "@/lib/api/product";
-import { UserContext } from "@/context/user-context";
+import { getProducts, updateProductStatus } from "../../lib/api/product";
+import { UserContext } from "../../context/user-context";
 
 type Status = "Active" | "Sold" | "Expired";
 type Ad = {

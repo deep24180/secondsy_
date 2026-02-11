@@ -1,8 +1,8 @@
 // src/app/layout.tsx
-import { UserProvider } from "@/context/user-context";
+import { UserProvider } from "../context/user-context";
 import "./globals.css";
-import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
+import Header from "../components/header/Header";
+import Footer from "../components/footer/Footer";
 
 export default function RootLayout({
   children,

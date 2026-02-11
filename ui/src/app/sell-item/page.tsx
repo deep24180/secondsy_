@@ -5,18 +5,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { UserContext } from "@/context/user-context";
+} from "../../components/ui/select";
+import { Button } from "../../components/ui/button";
+import { UserContext } from "../../context/user-context";
 import {
   createProduct,
   getProductById,
   updateProduct,
-} from "@/lib/api/product";
+} from "../../lib/api/product";
 import { useState, ChangeEvent, useContext, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Input } from "@/components/ui/input";
+import { Input } from "../../components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= TYPES ================= */

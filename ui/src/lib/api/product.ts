@@ -1,4 +1,4 @@
-import type { SellFormData } from "@/app/sell-item/page";
+import type { SellFormData } from "../../app/sell-item/page";
 import { API_URL } from "./user";
 
 export const createProduct = async (

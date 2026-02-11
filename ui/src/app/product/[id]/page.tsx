@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getProductById } from "@/lib/api/product";
-import type { Product } from "@/components/product/ProductCard";
-import { Button } from "@/components/ui/button";
+import { getProductById } from "../../../lib/api/product";
+import type { Product } from "../../../components/product/ProductCard";
+import { Button } from "../../../components/ui/button";
 
 type PageProps = {
   params: { id: string };

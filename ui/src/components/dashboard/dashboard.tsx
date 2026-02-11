@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
-import { getProducts } from "@/lib/api/product";
+import { getProducts } from "../../lib/api/product";
 
 const PRODUCTS_PER_PAGE = 8
 
