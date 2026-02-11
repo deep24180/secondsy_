@@ -12,6 +12,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
 import { UpdateProductStatusDto } from './dto/update-product-status.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -42,5 +43,12 @@ export class ProductsController {
   ) {
     const supabaseId = req.user.sub;
     return this.productsService.updateStatus(id, supabaseId, dto.status);
+  }
+
+  @UseGuards(SupabaseAuthGuard)
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateProductDto, @Req() req) {
+    const supabaseId = req.user.sub;
+    return this.productsService.update(id, supabaseId, dto);
   }
 }

@@ -8,11 +8,16 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { UserContext } from "@/context/user-context";
-import { createProduct } from "@/lib/api/product";
-import { useState, ChangeEvent, useContext } from "react";
+import {
+  createProduct,
+  getProductById,
+  updateProduct,
+} from "@/lib/api/product";
+import { useState, ChangeEvent, useContext, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Input } from "@/components/ui/input";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ================= TYPES ================= */
 
@@ -35,6 +40,11 @@ export type SellFormData = {
 type CategoryMap = Record<string, string[]>;
 
 export default function SellPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditMode = Boolean(editId);
+
   const [formData, setFormData] = useState<SellFormData>({
     title: "",
     category: "",
@@ -50,8 +60,9 @@ export default function SellPage() {
   });
 
   const [images, setImages] = useState<File[]>([]);
+  const [loadingEditData, setLoadingEditData] = useState(isEditMode);
 
-  const { accessToken } = useContext(UserContext);
+  const { accessToken, user, loading } = useContext(UserContext);
 
   const CATEGORY_MAP: CategoryMap = {
     Electronics: ["Mobile", "Laptop", "Tablet", "Camera", "Accessories"],
@@ -87,6 +98,75 @@ export default function SellPage() {
 
     return true;
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProductForEdit = async () => {
+      if (!isEditMode) {
+        setLoadingEditData(false);
+        return;
+      }
+
+      if (loading) {
+        return;
+      }
+
+      if (!user?.id || !accessToken) {
+        toast.error("You must be logged in to edit an item.");
+        router.push("/auth/login");
+        return;
+      }
+
+      setLoadingEditData(true);
+
+      try {
+        const response = await getProductById(editId!);
+        const product = response?.data || response;
+
+        if (!product) {
+          throw new Error("Product not found.");
+        }
+
+        if (product.userId !== user.id) {
+          toast.error("Only the owner can edit this item.");
+          router.push(`/product/${editId}`);
+          return;
+        }
+
+        if (!isMounted) return;
+
+        setFormData({
+          title: product.title ?? "",
+          category: product.category ?? "",
+          subcategory: product.subcategory ?? "",
+          price: Number(product.price) || "",
+          condition: (product.condition as ConditionType) ?? "",
+          description: product.description ?? "",
+          email: product.email ?? "",
+          phone: product.phone ?? "",
+          location: product.location ?? "",
+          deliveryPickup: Boolean(product.deliveryPickup),
+          deliveryShipping: Boolean(product.deliveryShipping),
+        });
+      } catch {
+        if (isMounted) {
+          toast.error("Failed to load product for editing.");
+          router.push("/profile");
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingEditData(false);
+        }
+      }
+    };
+
+    loadProductForEdit();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditMode, editId, loading, user?.id, accessToken, router]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -153,10 +233,21 @@ export default function SellPage() {
     }
 
     try {
+      if (isEditMode && editId) {
+        await updateProduct(editId, formData, accessToken);
+        toast.success("Advertisement updated successfully.");
+        router.push("/profile");
+        return;
+      }
+
       await createProduct(formData, accessToken);
-      toast.success("Advertisement posted successfully ");
-    } catch (error) {
-      toast.error("Failed to post advertisement. Try again.");
+      toast.success("Advertisement posted successfully.");
+    } catch {
+      toast.error(
+        isEditMode
+          ? "Failed to update advertisement. Try again."
+          : "Failed to post advertisement. Try again.",
+      );
     }
   };
 
@@ -172,16 +263,22 @@ export default function SellPage() {
 
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-extrabold text-slate-900 mb-2">
-          Post New Advertisement
+          {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
         </h1>
         <p className="text-slate-500 mb-12">
-          Create a high-quality listing to attract more buyers.
+          {isEditMode
+            ? "Update your listing details and save your changes."
+            : "Create a high-quality listing to attract more buyers."}
         </p>
 
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 md:p-14 space-y-14"
         >
+          {loadingEditData && (
+            <p className="text-sm text-slate-500">Loading item details...</p>
+          )}
+
           <section>
             <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
               <span className="w-2 h-8 bg-blue-600 rounded-full" />
@@ -205,7 +302,7 @@ export default function SellPage() {
                     setFormData((prev) => ({
                       ...prev,
                       category: value,
-                      subcategory: "", // reset subcategory when category changes
+                      subcategory: "",
                     }))
                   }
                 >
@@ -245,7 +342,7 @@ export default function SellPage() {
 
                   <SelectContent>
                     {formData.category &&
-                      CATEGORY_MAP[formData.category].map((sub) => (
+                      CATEGORY_MAP[formData.category]?.map((sub) => (
                         <SelectItem key={sub} value={sub}>
                           {sub}
                         </SelectItem>
@@ -266,7 +363,6 @@ export default function SellPage() {
             </div>
           </section>
 
-          {/* ================= CONDITION ================= */}
           <section>
             <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
               <span className="w-2 h-8 bg-blue-600 rounded-full" />
@@ -281,6 +377,7 @@ export default function SellPage() {
                       type="radio"
                       name="condition"
                       value={item}
+                      checked={formData.condition === item}
                       onChange={handleChange}
                       className="peer hidden"
                       required
@@ -419,10 +516,10 @@ export default function SellPage() {
 
           <Button
             type="submit"
-            onClick={handleSubmit}
+            disabled={loadingEditData}
             className="w-full h-14 rounded-2xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition shadow-lg"
           >
-            Publish Advertisement
+            {isEditMode ? "Save Changes" : "Publish Advertisement"}
           </Button>
         </form>
       </div>

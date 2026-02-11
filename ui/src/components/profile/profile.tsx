@@ -284,7 +284,7 @@ export default function MyAdsPage() {
           {!loadingAds &&
             !error &&
             paginatedAds.map((ad) => (
-              <div key={ad .id} className={getCardClass(ad.status)}>
+              <div key={ad.id} className={getCardClass(ad.status)}>
                 <div className="w-full sm:w-48 h-40 sm:h-32 rounded-lg bg-gray-200" />
 
                 <div className="flex-1 flex flex-col justify-between">
@@ -322,6 +322,9 @@ export default function MyAdsPage() {
                     {ad.status === "Active" && (
                       <>
                         <Button
+                          onClick={() =>
+                            router.push(`/sell-item?edit=${ad.id}`)
+                          }
                           type="button"
                           variant="ghost"
                           className={`flex-1 ${softBtn}`}

@@ -1,6 +1,6 @@
-import { IsIn } from "class-validator";
+import { IsIn } from 'class-validator';
 
 export class UpdateProductStatusDto {
-  @IsIn(["Active", "Sold", "Expired"])
-  status: "Active" | "Sold" | "Expired";
+  @IsIn(['Active', 'Sold', 'Expired'])
+  status: 'Active' | 'Sold' | 'Expired';
 }
