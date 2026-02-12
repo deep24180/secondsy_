@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getProductById } from "../../../lib/api/product";
 import type { Product } from "../../../components/product/ProductCard";
 import { Button } from "../../../components/ui/button";
+import { UserContext } from "../../../context/user-context";
 
 type PageProps = {
   params: { id: string };
 };
 
 export default function ProductDetailPage({ params }: PageProps) {
+  const router = useRouter();
+  const { user } = useContext(UserContext);
   const [product, setProduct] = useState<Product | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +45,21 @@ export default function ProductDetailPage({ params }: PageProps) {
   }, [id]);
 
   const images = useMemo(() => product?.images || [], [product]);
+
+  const handleMessageSeller = () => {
+    if (!product) return;
+
+    const target = `/messages?productId=${encodeURIComponent(
+      product.id,
+    )}&sellerId=${encodeURIComponent(product.userId)}`;
+
+    if (!user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(target)}`);
+      return;
+    }
+
+    router.push(target);
+  };
 
   if (error) {
     return (
@@ -158,7 +177,11 @@ export default function ProductDetailPage({ params }: PageProps) {
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
-            <Button className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+            <Button
+              onClick={handleMessageSeller}
+              disabled={user?.id === product.userId}
+              className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+            >
               Message Seller
             </Button>
 

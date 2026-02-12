@@ -2,6 +2,7 @@
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Plus,
   Eye,
@@ -237,7 +238,9 @@ export default function MyAdsPage() {
 
           <nav className="mt-6 space-y-1">
             <div className={getNavClass("My Ads")}>My Ads</div>
-            <div className={getNavClass("Messages")}>Messages</div>
+            <Link href="/messages" className={getNavClass("Messages")}>
+              Messages
+            </Link>
             <div className={getNavClass("Profile")}>Profile</div>
             <button
               type="button"

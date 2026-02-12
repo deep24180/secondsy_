@@ -7,12 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
-  supabaseId          String      @unique
-  email               String
-  createdAt           DateTime    @default(now())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  supabaseId String   @unique
+  email      String
+  createdAt  DateTime @default(now())
 }
 
 model Product {
@@ -32,4 +31,30 @@ model Product {
   status           String   @default("Active")
   userId           String
   createdAt        DateTime @default(now())
+}
+
+model Conversation {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  productId        String
+  participantAId   String
+  participantBId   String
+  lastMessageAt    DateTime?
+  createdAt        DateTime  @default(now())
+  messages         Message[]
+
+  @@index([participantAId])
+  @@index([participantBId])
+  @@index([productId])
+  @@unique([productId, participantAId, participantBId])
+}
+
+model Message {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
