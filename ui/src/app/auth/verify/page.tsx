@@ -1,28 +1,48 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { createUser } from "../../../lib/api/user";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { toast } from "react-toastify";
+import PageLoader from "../../../components/ui/page-loader";
 
 export default function VerifyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState<string | null>(null);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [seconds, setSeconds] = useState(59);
   const inputsRef = useRef<HTMLInputElement[]>([]);
+  const redirectPath = (() => {
+    const raw = searchParams.get("redirect") || "/";
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  })();
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("otp_email");
-    if (!savedEmail) {
-      router.push("/");
-      return;
-    }
-    setEmail(savedEmail);
-  }, [router]);
+    const initVerification = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        router.replace(redirectPath);
+        return;
+      }
+
+      const savedEmail = localStorage.getItem("otp_email");
+      if (!savedEmail) {
+        router.replace(`/auth/login?redirect=${encodeURIComponent(redirectPath)}`);
+        return;
+      }
+
+      setEmail(savedEmail);
+      setInitializing(false);
+    };
+
+    initVerification();
+  }, [router, redirectPath]);
 
   useEffect(() => {
     if (seconds === 0) return;
@@ -53,7 +73,7 @@ export default function VerifyPage() {
   const verifyOtp = async () => {
     const token = otp.join("");
     if (token.length !== 6) {
-      alert("Enter 6-digit OTP");
+      toast.warning("Enter 6-digit OTP.");
       return;
     }
 
@@ -67,7 +87,7 @@ export default function VerifyPage() {
 
     if (error) {
       setLoading(false);
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
@@ -76,22 +96,36 @@ export default function VerifyPage() {
     } = await supabase.auth.getUser();
 
     if (user) {
-      await createUser({
-        supabaseId: user.id,
-        email: user.email!,
-      });
+      try {
+        await createUser({
+          supabaseId: user.id,
+          email: user.email!,
+        });
+      } catch {
+        // ignore user creation errors here; auth is already successful
+      }
     }
 
     setLoading(false);
     localStorage.removeItem("otp_email");
-    router.push("/ ");
+    toast.success("Login successful.");
+    router.replace(redirectPath);
   };
 
   const resendOtp = async () => {
     if (!email || seconds > 0) return;
-    await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("OTP resent.");
     setSeconds(59);
   };
+
+  if (initializing) {
+    return <PageLoader message="Preparing verification..." />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f7f8] px-4">

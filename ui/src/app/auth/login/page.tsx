@@ -1,15 +1,48 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { toast } from "react-toastify";
+import PageLoader from "../../../components/ui/page-loader";
+
+function getSafeRedirectPath(redirect: string | null) {
+  if (!redirect) return "/";
+  if (!redirect.startsWith("/") || redirect.startsWith("//")) return "/";
+  return redirect;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectPath = getSafeRedirectPath(requestedRedirect);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.replace(redirectPath);
+        return;
+      }
+
+      setInitializing(false);
+    };
+
+    checkSession();
+  }, [router, redirectPath]);
+
+  if (initializing) {
+    return <PageLoader message="Checking session..." />;
+  }
 
   const sendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,18 +51,22 @@ export default function LoginPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(), 
+      email: email.trim().toLowerCase(),
+      options: {
+        shouldCreateUser: true,
+      },
     });
 
     setLoading(false);
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
-    localStorage.setItem("otp_email", email);
-    router.push("/auth/verify");
+    localStorage.setItem("otp_email", email.trim().toLowerCase());
+    toast.success("OTP sent to your email.");
+    router.push(`/auth/verify?redirect=${encodeURIComponent(redirectPath)}`);
   };
 
   const signInWithGoogle = async () => {
@@ -40,13 +77,15 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}`,
+        redirectTo: `${window.location.origin}${redirectPath}`,
       },
     });
 
     setLoading(false);
 
-    if (error) alert(error.message);
+    if (error) {
+      toast.error(error.message);
+    }
   };
 
   return (

@@ -1,18 +1,22 @@
 "use client";
 
+import { useContext } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { UserContext } from "../../context/user-context";
 
 export default function Header() {
   const router = useRouter();
-
-  const isLoggedIn = true; // 🔁 later replace with real auth state
+  const pathname = usePathname();
+  const { user, loading } = useContext(UserContext);
+  const isLoggedIn = Boolean(user);
 
   const handleSellClick = () => {
     if (!isLoggedIn) {
-      router.push("/auth/login");
+      const redirect = pathname || "/sell-item";
+      router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
 
@@ -37,6 +41,7 @@ export default function Header() {
           <Button
             variant="outline"
             onClick={handleSellClick}
+            disabled={loading}
             className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
           >
             Sell Item
@@ -44,7 +49,7 @@ export default function Header() {
 
           {!isLoggedIn ? (
             <Link
-              href="/auth/login"
+              href={`/auth/login?redirect=${encodeURIComponent(pathname || "/")}`}
               className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
             >
               Login

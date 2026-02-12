@@ -14,10 +14,10 @@ import {
   updateProduct,
 } from "../../lib/api/product";
 import { useState, ChangeEvent, useContext, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
+import PageLoader from "../../components/ui/page-loader";
 
 /* ================= TYPES ================= */
 
@@ -168,6 +168,13 @@ export default function SellPage() {
     };
   }, [isEditMode, editId, loading, user?.id, accessToken, router]);
 
+  useEffect(() => {
+    if (!isEditMode && !loading && (!user?.id || !accessToken)) {
+      toast.error("You must be logged in to post an item.");
+      router.replace("/auth/login");
+    }
+  }, [isEditMode, loading, user?.id, accessToken, router]);
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
@@ -214,6 +221,7 @@ export default function SellPage() {
 
     if (!accessToken) {
       toast.error("You must be logged in to post an item.");
+      router.replace("/auth/login");
       return;
     }
 
@@ -257,10 +265,12 @@ export default function SellPage() {
   const inputClass =
     "w-full h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition";
 
+  if (loading || (!isEditMode && (!user?.id || !accessToken))) {
+    return <PageLoader message="Checking access..." />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 py-16 px-4">
-      <ToastContainer position="top-right" autoClose={3000} />
-
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-extrabold text-slate-900 mb-2">
           {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}

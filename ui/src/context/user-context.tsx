@@ -1,11 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { signOut, supabase } from "../lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type UserContextType = {
-  user: User;
+  user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
   accessToken: string | null;
@@ -16,7 +18,7 @@ export const UserContext = createContext<UserContextType>(
 );
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -24,10 +26,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const loadSession = async () => {
       const { data } = await supabase.auth.getSession();
-      console.log(data);
       setUser(data.session?.user ?? null);
       setAccessToken(data.session?.access_token ?? null);
-
       setLoading(false);
     };
 
@@ -36,6 +36,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
+        setAccessToken(session?.access_token ?? null);
       },
     );
 
@@ -48,12 +49,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     await signOut();
 
     setUser(null);
+    setAccessToken(null);
     setLoading(false);
   };
 
   return (
     <UserContext.Provider value={{ user, loading, logout, accessToken }}>
       {children}
+      <ToastContainer position="top-right" autoClose={3000} />
     </UserContext.Provider>
   );
 };

@@ -16,6 +16,7 @@ import {
 import { Button } from "../ui/button";
 import { getProducts, updateProductStatus } from "../../lib/api/product";
 import { UserContext } from "../../context/user-context";
+import PageLoader from "../ui/page-loader";
 
 type Status = "Active" | "Sold" | "Expired";
 type Ad = {
@@ -31,9 +32,20 @@ type Ad = {
   userId: string;
 };
 
+type ProductApiItem = {
+  id: string;
+  title: string;
+  price: number | string;
+  status?: Status;
+  images?: string[];
+  location?: string;
+  createdAt?: string;
+  userId: string;
+};
+
 export default function MyAdsPage() {
   const router = useRouter();
-  const { user, logout, accessToken } = useContext(UserContext);
+  const { user, logout, accessToken, loading } = useContext(UserContext);
 
   const [activeTab, setActiveTab] = useState<
     "All" | "Active" | "Sold" | "Expired"
@@ -65,9 +77,9 @@ export default function MyAdsPage() {
             ? response
             : [];
 
-        const mappedAds = products
-          .filter((product: any) => product.userId === user.id)
-          .map((product: any) => ({
+        const mappedAds = (products as ProductApiItem[])
+          .filter((product) => product.userId === user.id)
+          .map((product) => ({
             id: product.id,
             title: product.title,
             price: Number(product.price) || 0,
@@ -199,6 +211,16 @@ export default function MyAdsPage() {
     await logout();
     router.push("/auth/login");
   };
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/");
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
+    return <PageLoader message="Checking account..." />;
+  }
 
   return (
     <div className="min-h-screen bg-[#f6f7f8] flex justify-center py-4 sm:py-6 lg:py-8">
