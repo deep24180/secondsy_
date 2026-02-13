@@ -50,6 +50,20 @@ export class MessagesRepository {
       where: {
         OR: [{ participantAId: userId }, { participantBId: userId }],
       },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+          select: {
+            id: true,
+            senderId: true,
+            content: true,
+            createdAt: true,
+          },
+        },
+      },
       orderBy: {
         lastMessageAt: 'desc',
       },

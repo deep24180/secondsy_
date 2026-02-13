@@ -15,6 +15,7 @@ import {
   startConversation,
 } from "../../lib/api/message";
 import { API_URL } from "../../lib/api/user";
+import { markConversationSeen } from "../../lib/message-unread";
 
 type WsIncoming = {
   type: string;
@@ -223,6 +224,18 @@ export default function MessagesPage() {
         );
       });
   }, [selectedConversationId, accessToken]);
+
+  useEffect(() => {
+    if (!selectedConversationId || !user?.id) return;
+
+    const selectedConversationMessages =
+      messagesByConversation[selectedConversationId] || [];
+    const latestMessage =
+      selectedConversationMessages[selectedConversationMessages.length - 1];
+
+    const seenAt = latestMessage?.createdAt || new Date().toISOString();
+    markConversationSeen(user.id, selectedConversationId, seenAt);
+  }, [selectedConversationId, user?.id, messagesByConversation]);
 
   useEffect(() => {
     if (!selectedConversationId || !socketReady) return;

@@ -7,6 +7,14 @@ export type Conversation = {
   participantBId: string;
   lastMessageAt?: string | null;
   createdAt: string;
+  messages?: ConversationLatestMessage[];
+};
+
+export type ConversationLatestMessage = {
+  id: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
 };
 
 export type ChatMessage = {
