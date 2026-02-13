@@ -11,30 +11,39 @@ const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
-  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [visibleCountByFilter, setVisibleCountByFilter] = useState<
+    Record<string, number>
+  >({});
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const query = (searchParams.get("q") || "").trim().toLowerCase();
+  const selectedCategory = (searchParams.get("category") || "")
+    .trim()
+    .toLowerCase();
+  const filterKey = `${query}::${selectedCategory}`;
 
   const filteredProducts = useMemo(() => {
-    if (!query) return products;
-
     return products.filter((product) => {
-      const searchableText = [
-        product.title,
-        product.category,
-        product.subcategory,
-        product.location,
-      ]
-        .join(" ")
-        .toLowerCase();
+      const productCategory = product.category.toLowerCase();
+      const categoryMatches = selectedCategory
+        ? productCategory === selectedCategory ||
+          productCategory.includes(selectedCategory) ||
+          selectedCategory.includes(productCategory)
+        : true;
+      const searchMatches = query
+        ? [product.title, product.category, product.subcategory, product.location]
+            .join(" ")
+            .toLowerCase()
+            .includes(query)
+        : true;
 
-      return searchableText.includes(query);
+      return categoryMatches && searchMatches;
     });
-  }, [products, query]);
+  }, [products, query, selectedCategory]);
 
+  const visibleCount = visibleCountByFilter[filterKey] ?? PRODUCTS_PER_PAGE;
   const visibleProducts = filteredProducts.slice(0, visibleCount);
 
   useEffect(() => {
@@ -66,7 +75,10 @@ export default function Dashboard() {
 
           // simulate API delay
           setTimeout(() => {
-            setVisibleCount((prev) => prev + PRODUCTS_PER_PAGE);
+            setVisibleCountByFilter((prev) => ({
+              ...prev,
+              [filterKey]: (prev[filterKey] ?? PRODUCTS_PER_PAGE) + PRODUCTS_PER_PAGE,
+            }));
             setIsLoading(false);
           }, 1000);
         }
@@ -77,7 +89,7 @@ export default function Dashboard() {
     observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [isLoading, visibleCount, filteredProducts.length]);
+  }, [isLoading, visibleCount, filteredProducts.length, filterKey]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -92,6 +104,11 @@ export default function Dashboard() {
               Showing results for: {searchParams.get("q")}
             </p>
           ) : null}
+          {selectedCategory ? (
+            <p className="mb-6 text-sm text-slate-500">
+              Selected category: {searchParams.get("category")}
+            </p>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {visibleProducts.map((product) => (
@@ -101,7 +118,7 @@ export default function Dashboard() {
 
           {filteredProducts.length === 0 ? (
             <p className="mt-8 text-sm text-slate-500">
-              No listings found for: {searchParams.get("q")}.
+              No listings found with the selected filters.
             </p>
           ) : null}
 
