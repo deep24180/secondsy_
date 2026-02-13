@@ -7,6 +7,11 @@ import { getProductById } from "../../../lib/api/product";
 import type { Product } from "../../../components/product/ProductCard";
 import { Button } from "../../../components/ui/button";
 import { UserContext } from "../../../context/user-context";
+import {
+  isProductSaved,
+  removeSavedProduct,
+  saveProductForLater,
+} from "../../../lib/saved-products";
 
 type PageProps = {
   params: { id: string };
@@ -21,10 +26,12 @@ const formatPriceINR = (price: number) =>
 
 export default function ProductDetailPage({ params }: PageProps) {
   const router = useRouter();
-  const { user } = useContext(UserContext);
+  const { user, accessToken } = useContext(UserContext);
   const [product, setProduct] = useState<Product | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [savedForLater, setSavedForLater] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const id = params?.id;
 
@@ -52,6 +59,20 @@ export default function ProductDetailPage({ params }: PageProps) {
   }, [id]);
 
   const images = useMemo(() => product?.images || [], [product]);
+  
+  useEffect(() => {
+    const loadSavedState = async () => {
+      if (!id || !accessToken) {
+        setSavedForLater(false);
+        return;
+      }
+
+      const saved = await isProductSaved(id, accessToken);
+      setSavedForLater(saved);
+    };
+
+    void loadSavedState();
+  }, [id, accessToken]);
 
   const handleMessageSeller = () => {
     if (!product) return;
@@ -66,6 +87,30 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
 
     router.push(target);
+  };
+
+  const handleSaveForLater = async () => {
+    if (!id) return;
+
+    if (!user?.id || !accessToken) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      if (savedForLater) {
+        await removeSavedProduct(id, accessToken);
+        setSavedForLater(false);
+      } else {
+        await saveProductForLater(id, accessToken);
+        setSavedForLater(true);
+      }
+    } catch {
+      setError("Unable to update saved item. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (error) {
@@ -194,9 +239,11 @@ export default function ProductDetailPage({ params }: PageProps) {
 
             <Button
               variant="outline"
+              onClick={handleSaveForLater}
+              disabled={saving}
               className="rounded-xl px-6 py-3 text-sm font-semibold hover:bg-slate-100"
             >
-              Save for Later
+              {savedForLater ? "Saved for Later" : "Save for Later"}
             </Button>
           </div>
         </div>

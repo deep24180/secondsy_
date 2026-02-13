@@ -77,8 +77,9 @@ export default function MyAdsPage() {
           : Array.isArray(response)
             ? response
             : [];
+        const typedProducts = products as ProductApiItem[];
 
-        const mappedAds = (products as ProductApiItem[])
+        const mappedAds = typedProducts
           .filter((product) => product.userId === user.id)
           .map((product) => ({
             id: product.id,
@@ -241,6 +242,9 @@ export default function MyAdsPage() {
             <div className={getNavClass("My Ads")}>My Ads</div>
             <Link href="/messages" className={getNavClass("Messages")}>
               Messages
+            </Link>
+            <Link href="/saved" className={getNavClass("Saved")}>
+              Saved
             </Link>
             <div className={getNavClass("Profile")}>Profile</div>
             <button

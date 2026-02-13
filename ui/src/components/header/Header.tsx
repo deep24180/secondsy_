@@ -3,7 +3,7 @@
 import { FormEvent, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MessageCircle } from "lucide-react";
+import { Bookmark, MessageCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
@@ -152,6 +152,16 @@ export default function Header() {
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               ) : null}
+            </Link>
+          ) : null}
+
+          {isLoggedIn ? (
+            <Link
+              href="/saved"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border hover:bg-slate-100"
+              aria-label="Saved for later"
+            >
+              <Bookmark className="h-5 w-5" />
             </Link>
           ) : null}
 
