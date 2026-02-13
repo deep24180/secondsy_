@@ -21,6 +21,13 @@ type ProductCardProps = {
   product: Product;
 };
 
+const formatPriceINR = (price: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
 export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
@@ -40,7 +47,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-medium truncate">{product.title}</h3>
-          <span className="font-bold">${product.price}</span>
+          <span className="font-bold">{formatPriceINR(Number(product.price) || 0)}</span>
         </div>
         <p className="text-sm text-slate-500 mt-1">{product.location}</p>
       </div>

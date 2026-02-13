@@ -12,6 +12,13 @@ type PageProps = {
   params: { id: string };
 };
 
+const formatPriceINR = (price: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
 export default function ProductDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { user } = useContext(UserContext);
@@ -129,7 +136,7 @@ export default function ProductDetailPage({ params }: PageProps) {
 
           <div className="flex items-center gap-4">
             <span className="text-3xl font-extrabold text-slate-900">
-              ${product.price}
+              {formatPriceINR(Number(product.price) || 0)}
             </span>
             <span className="rounded-full bg-emerald-100 px-4 py-1 text-xs font-semibold text-emerald-700">
               {product.condition}

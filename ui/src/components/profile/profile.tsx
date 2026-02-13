@@ -192,9 +192,10 @@ export default function MyAdsPage() {
   }, [page, totalPages]);
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(price);
 
   const formatDate = (value: string) => {
