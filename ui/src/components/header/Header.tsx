@@ -1,8 +1,8 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { FormEvent, useContext, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -30,9 +30,11 @@ const toWsUrl = (baseUrl: string, token: string) => {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, loading, accessToken } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
 
   const handleSellClick = () => {
     if (!isLoggedIn) {
@@ -93,6 +95,31 @@ export default function Header() {
     };
   }, [isLoggedIn, accessToken, user?.id]);
 
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmed = searchTerm.trim();
+
+    if (!trimmed) {
+      router.push("/");
+      return;
+    }
+
+    router.push(`/?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      router.replace("/");
+      return;
+    }
+
+    router.replace(`/?q=${encodeURIComponent(trimmed)}`);
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -100,11 +127,16 @@ export default function Header() {
         <h1 className="text-xl font-bold text-primary">Secondsy</h1>
 
         {/* Search */}
-        <Input
-          type="text"
-          placeholder="Search for anything..."
-          className="hidden md:block px-4 py-2 bg-slate-100 rounded-lg w-[400px]"
-        />
+        <form onSubmit={handleSearchSubmit} className="hidden md:block">
+          <Input
+            name="q"
+            type="text"
+            placeholder="Search for anything..."
+            value={searchTerm}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            className="px-4 py-2 bg-slate-100 rounded-lg w-[400px]"
+          />
+        </form>
 
         {/* Actions */}
         <div className="flex items-center gap-3">

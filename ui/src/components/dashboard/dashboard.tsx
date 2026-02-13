@@ -1,27 +1,46 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
 import { getProducts } from "../../lib/api/product";
 
-const PRODUCTS_PER_PAGE = 8
+const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
+  const searchParams = useSearchParams();
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const query = (searchParams.get("q") || "").trim().toLowerCase();
 
-  const visibleProducts = products.slice(0, visibleCount);
+  const filteredProducts = useMemo(() => {
+    if (!query) return products;
+
+    return products.filter((product) => {
+      const searchableText = [
+        product.title,
+        product.category,
+        product.subcategory,
+        product.location,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [products, query]);
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const products = await getProducts();
-        console.log(products);
         setProducts(products);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -41,7 +60,7 @@ export default function Dashboard() {
         if (
           firstEntry.isIntersecting &&
           !isLoading &&
-          visibleCount < products.length
+          visibleCount < filteredProducts.length
         ) {
           setIsLoading(true);
 
@@ -58,8 +77,7 @@ export default function Dashboard() {
     observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [isLoading, visibleCount]);
-  console.log(products);
+  }, [isLoading, visibleCount, filteredProducts.length]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,15 +87,26 @@ export default function Dashboard() {
         {/* Products */}
         <section>
           <h2 className="text-2xl font-bold mb-6">Recent Listings</h2>
+          {query ? (
+            <p className="mb-6 text-sm text-slate-500">
+              Showing results for: {searchParams.get("q")}
+            </p>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
+          {filteredProducts.length === 0 ? (
+            <p className="mt-8 text-sm text-slate-500">
+              No listings found for: {searchParams.get("q")}.
+            </p>
+          ) : null}
+
           {/* Loader */}
-          {visibleCount < products.length && (
+          {visibleCount < filteredProducts.length && (
             <div
               ref={loaderRef}
               className="flex justify-center items-center mt-12 h-20"
