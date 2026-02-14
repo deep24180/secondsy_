@@ -35,6 +35,7 @@ export type SellFormData = {
   location: string;
   deliveryPickup: boolean;
   deliveryShipping: boolean;
+  images: string[];
 };
 
 type CategoryMap = Record<string, string[]>;
@@ -49,7 +50,7 @@ export default function SellPage() {
     title: "",
     category: "",
     subcategory: "",
-    price: 0,
+    price: "",
     condition: "",
     description: "",
     email: "",
@@ -57,9 +58,10 @@ export default function SellPage() {
     location: "",
     deliveryPickup: true,
     deliveryShipping: false,
+    images: [],
   });
 
-  const [images, setImages] = useState<File[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [loadingEditData, setLoadingEditData] = useState(isEditMode);
 
   const { accessToken, user, loading } = useContext(UserContext);
@@ -148,6 +150,7 @@ export default function SellPage() {
           location: product.location ?? "",
           deliveryPickup: Boolean(product.deliveryPickup),
           deliveryShipping: Boolean(product.deliveryShipping),
+          images: Array.isArray(product.images) ? product.images : [],
         });
       } catch {
         if (isMounted) {
@@ -205,15 +208,49 @@ export default function SellPage() {
     }));
   };
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
+  const isValidImageUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
 
-    const files: File[] = Array.from(e.target.files);
-    setImages((prev) => [...prev, ...files].slice(0, 5));
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    if (!isValidImageUrl(trimmed)) {
+      toast.error("Please enter a valid image URL.");
+      return;
+    }
+
+    if (formData.images.includes(trimmed)) {
+      toast.warning("This image URL is already added.");
+      return;
+    }
+
+    if (formData.images.length >= 5) {
+      toast.warning("You can add up to 5 image links.");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, trimmed],
+    }));
+    setImageUrlInput("");
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
@@ -426,25 +463,26 @@ export default function SellPage() {
             </h3>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <label className="aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-blue-600 hover:bg-blue-50 transition">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  hidden
-                  onChange={handleImageUpload}
+              <div className="col-span-2 md:col-span-5 grid md:grid-cols-[1fr_auto] gap-3">
+                <Input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className={inputClass}
                 />
-                <span className="text-4xl">+</span>
-                <span className="text-xs mt-2">Add Photo</span>
-              </label>
+                <Button type="button" onClick={handleAddImageUrl}>
+                  Add Image Link
+                </Button>
+              </div>
 
-              {images.map((file, index) => (
+              {formData.images.map((img, index) => (
                 <div
                   key={index}
                   className="relative aspect-square rounded-2xl overflow-hidden border shadow hover:shadow-lg transition"
                 >
                   <img
-                    src={URL.createObjectURL(file)}
+                    src={img}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
