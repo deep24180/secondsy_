@@ -14,10 +14,13 @@ export class MessagesService {
     return [userIdA, userIdB].sort((a, b) => a.localeCompare(b));
   }
 
-  private assertParticipant(conversation: {
-    participantAId: string;
-    participantBId: string;
-  }, userId: string) {
+  private assertParticipant(
+    conversation: {
+      participantAId: string;
+      participantBId: string;
+    },
+    userId: string,
+  ) {
     const isParticipant =
       conversation.participantAId === userId ||
       conversation.participantBId === userId;

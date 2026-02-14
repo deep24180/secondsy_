@@ -184,7 +184,9 @@ export class MessagesWsService implements OnModuleDestroy {
     const mask = buffer.subarray(offset, offset + 4);
     offset += 4;
 
-    const payload = Buffer.from(buffer.subarray(offset, offset + payloadLength));
+    const payload = Buffer.from(
+      buffer.subarray(offset, offset + payloadLength),
+    );
 
     for (let i = 0; i < payload.length; i += 1) {
       payload[i] ^= mask[i % 4];
@@ -256,11 +258,12 @@ export class MessagesWsService implements OnModuleDestroy {
           return;
         }
 
-        const { message, conversation } = await this.messagesService.sendMessage(
-          conversationId,
-          client.userId,
-          content,
-        );
+        const { message, conversation } =
+          await this.messagesService.sendMessage(
+            conversationId,
+            client.userId,
+            content,
+          );
 
         this.broadcastToParticipants(
           conversation.participantAId,
@@ -299,7 +302,10 @@ export class MessagesWsService implements OnModuleDestroy {
     data: Record<string, unknown>,
   ) {
     for (const client of this.clients) {
-      if (client.userId !== participantAId && client.userId !== participantBId) {
+      if (
+        client.userId !== participantAId &&
+        client.userId !== participantBId
+      ) {
         continue;
       }
 

@@ -81,7 +81,11 @@ export class MessagesRepository {
     });
   }
 
-  async createMessage(conversationId: string, senderId: string, content: string) {
+  async createMessage(
+    conversationId: string,
+    senderId: string,
+    content: string,
+  ) {
     const [message] = await this.prisma.$transaction([
       this.prisma.message.create({
         data: {

@@ -1,4 +1,10 @@
-import { IsString, IsBoolean, IsArray, IsNumber, IsOptional } from "class-validator";
+import {
+  IsString,
+  IsBoolean,
+  IsArray,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsString() title: string;
