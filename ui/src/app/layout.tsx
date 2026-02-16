@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import { UserProvider } from "../context/user-context";
+import { SearchProvider } from "../context/search-context";
 import "./globals.css";
 import Header from "../components/header/Header";
 import Footer from "../components/footer/Footer";
@@ -19,9 +20,11 @@ export default function RootLayout({
       </head>
       <body className="bg-background-light font-display text-slate-900">
         <UserProvider>
-          <Header />
-          {children}
-          <Footer />
+          <SearchProvider>
+            <Header />
+            {children}
+            <Footer />
+          </SearchProvider>
         </UserProvider>
       </body>
     </html>

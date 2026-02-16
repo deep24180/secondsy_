@@ -2,11 +2,12 @@
 
 import { FormEvent, useContext, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bookmark, MessageCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
+import { SearchContext } from "../../context/search-context";
 import { getConversations } from "../../lib/api/message";
 import {
   getUnreadConversationsCount,
@@ -30,11 +31,15 @@ const toWsUrl = (baseUrl: string, token: string) => {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, loading, accessToken } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const { query, setQuery, clearQuery } = useContext(SearchContext);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    setSearchTerm(query);
+  }, [query]);
 
   const handleSellClick = () => {
     if (!isLoggedIn) {
@@ -101,23 +106,22 @@ export default function Header() {
     const trimmed = searchTerm.trim();
 
     if (!trimmed) {
-      router.push("/");
+      clearQuery();
+      if (pathname !== "/") {
+        router.push("/");
+      }
       return;
     }
 
-    router.push(`/?q=${encodeURIComponent(trimmed)}`);
+    setQuery(trimmed);
+    if (pathname !== "/") {
+      router.push("/");
+    }
   };
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-      router.replace("/");
-      return;
-    }
-
-    router.replace(`/?q=${encodeURIComponent(trimmed)}`);
+    setQuery(value.trim());
   };
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-
+import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
 import { getProducts } from "../../lib/api/product";
@@ -11,6 +11,7 @@ const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
+  const { query } = useContext(SearchContext);
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [visibleCountByFilter, setVisibleCountByFilter] = useState<
@@ -18,11 +19,11 @@ export default function Dashboard() {
   >({});
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
-  const query = (searchParams.get("q") || "").trim().toLowerCase();
+  const normalizedQuery = query.trim().toLowerCase();
   const selectedCategory = (searchParams.get("category") || "")
     .trim()
     .toLowerCase();
-  const filterKey = `${query}::${selectedCategory}`;
+  const filterKey = `${normalizedQuery}::${selectedCategory}`;
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -32,16 +33,16 @@ export default function Dashboard() {
           productCategory.includes(selectedCategory) ||
           selectedCategory.includes(productCategory)
         : true;
-      const searchMatches = query
+      const searchMatches = normalizedQuery
         ? [product.title, product.category, product.subcategory, product.location]
             .join(" ")
             .toLowerCase()
-            .includes(query)
+            .includes(normalizedQuery)
         : true;
 
       return categoryMatches && searchMatches;
     });
-  }, [products, query, selectedCategory]);
+  }, [products, normalizedQuery, selectedCategory]);
 
   const visibleCount = visibleCountByFilter[filterKey] ?? PRODUCTS_PER_PAGE;
   const visibleProducts = filteredProducts.slice(0, visibleCount);
@@ -99,9 +100,9 @@ export default function Dashboard() {
         {/* Products */}
         <section>
           <h2 className="text-2xl font-bold mb-6">Recent Listings</h2>
-          {query ? (
+          {normalizedQuery ? (
             <p className="mb-6 text-sm text-slate-500">
-              Showing results for: {searchParams.get("q")}
+              Showing results for: {query}
             </p>
           ) : null}
           {selectedCategory ? (
