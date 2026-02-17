@@ -6,6 +6,7 @@ import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
 import { getProducts } from "../../lib/api/product";
+import PageLoader from "../ui/page-loader";
 
 const PRODUCTS_PER_PAGE = 8;
 
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingProducts, setIsFetchingProducts] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [visibleCountByFilter, setVisibleCountByFilter] = useState<
     Record<string, number>
@@ -49,11 +51,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsFetchingProducts(true);
       try {
         const products = await getProducts();
         setProducts(products);
       } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
+        setIsFetchingProducts(false);
       }
     };
 
@@ -91,6 +96,10 @@ export default function Dashboard() {
 
     return () => observer.disconnect();
   }, [isLoading, visibleCount, filteredProducts.length, filterKey]);
+
+  if (isFetchingProducts) {
+    return <PageLoader message="Loading listings..." />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
