@@ -102,41 +102,67 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-        <CategoriesSection />
-
-        {/* Products */}
-        <section>
-          <h2 className="text-2xl font-bold mb-6">Recent Listings</h2>
-          {normalizedQuery ? (
-            <p className="mb-6 text-sm text-slate-500">
-              Showing results for: {query}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <section className="rounded-3xl border border-slate-200/70 bg-white/80 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.55)] backdrop-blur sm:p-8">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Marketplace Dashboard
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                Find quality listings in seconds
+              </h1>
+            </div>
+            <p className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600">
+              {products.length} total listings
             </p>
-          ) : null}
-          {selectedCategory ? (
-            <p className="mb-6 text-sm text-slate-500">
-              Selected category: {searchParams.get("category")}
-            </p>
-          ) : null}
+          </div>
+          <CategoriesSection />
+        </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <section className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:p-8">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              Recent Listings
+            </h2>
+            <p className="text-sm text-slate-500">
+              {filteredProducts.length} matching item
+              {filteredProducts.length === 1 ? "" : "s"}
+            </p>
+          </div>
+
+          {(normalizedQuery || selectedCategory) && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              {normalizedQuery ? (
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  Search: {query}
+                </span>
+              ) : null}
+              {selectedCategory ? (
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                  Category: {searchParams.get("category")}
+                </span>
+              ) : null}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
           {filteredProducts.length === 0 ? (
-            <p className="mt-8 text-sm text-slate-500">
+            <p className="mt-8 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
               No listings found with the selected filters.
             </p>
           ) : null}
 
-          {/* Loader */}
           {visibleCount < filteredProducts.length && (
             <div
               ref={loaderRef}
-              className="flex justify-center items-center mt-12 h-20"
+              className="mt-12 flex h-20 items-center justify-center"
             >
               {isLoading && (
                 <span className="h-8 w-8 rounded-full border-4 border-slate-300 border-t-primary animate-spin" />

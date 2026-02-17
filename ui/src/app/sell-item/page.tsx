@@ -69,7 +69,7 @@ export default function SellPage() {
   const CATEGORY_MAP: CategoryMap = {
     Electronics: ["Mobile", "Laptop", "Tablet", "Camera", "Accessories"],
     Vehicles: ["Car", "Bike", "Scooter", "Truck"],
-    "Home & Garden": ["Furniture", "Appliances", "Decor"],
+    "Home & Garden": ["Furniture", "Appliances", "Decoration & Art","Tools & Equipment"],
     Fashion: ["Men", "Women", "Kids", "Footwear"],
   };
 

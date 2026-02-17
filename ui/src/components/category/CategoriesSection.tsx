@@ -23,10 +23,12 @@ export default function CategoriesSection() {
   };
 
   return (
-    <section className="mb-10">
-      <h2 className="mb-6 text-lg font-bold">Explore Categories</h2>
+    <section>
+      <h2 className="mb-5 text-lg font-semibold tracking-tight text-slate-900">
+        Explore Categories
+      </h2>
 
-      <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {categories.map((cat) => (
           <CategoryCard
             key={cat.id}

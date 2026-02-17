@@ -29,27 +29,42 @@ const formatPriceINR = (price: number) =>
   }).format(price);
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const image = product.images?.[0];
+
   return (
     <Link
       href={`/product/${product.id}`}
-      className="group block bg-white rounded-xl border hover:shadow-xl overflow-hidden transition-shadow cursor-pointer"
+      className="group block cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
     >
-      <div className="relative aspect-square">
-        <div className="relative w-full h-56 overflow-hidden rounded-t-xl bg-slate-100">
+      <div className="relative h-56 overflow-hidden bg-slate-100">
+        {image ? (
           <img
-            src={product.images[0]}
+            src={image}
             alt={product.title}
-            className="object-cover w-full h-full group-hover:scale-[1.02] transition-transform"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-        </div>
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300" />
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent" />
+        <span className="absolute left-3 top-3 rounded-full border border-white/50 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+          {product.category}
+        </span>
       </div>
 
-      <div className="p-4">
+      <div className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-medium truncate">{product.title}</h3>
-          <span className="font-bold">{formatPriceINR(Number(product.price) || 0)}</span>
+          <h3 className="truncate text-sm font-semibold text-slate-900 sm:text-base">
+            {product.title}
+          </h3>
+          <span className="text-sm font-bold text-slate-900 sm:text-base">
+            {formatPriceINR(Number(product.price) || 0)}
+          </span>
         </div>
-        <p className="text-sm text-slate-500 mt-1">{product.location}</p>
+        <div className="flex items-center justify-between gap-3 text-xs text-slate-500 sm:text-sm">
+          <p className="truncate">{product.location}</p>
+          <p className="truncate">{product.condition}</p>
+        </div>
       </div>
     </Link>
   );
