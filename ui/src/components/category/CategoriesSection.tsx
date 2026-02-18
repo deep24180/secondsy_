@@ -1,13 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { categories } from "../../data/categories";
+import { categories as fallbackCategories, type Category } from "../../data/categories";
+import { getCategories } from "../../lib/api/category";
 import CategoryCard from "./CategoryCard";
 
 export default function CategoriesSection() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategory = (searchParams.get("category") || "").trim();
+  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      const data = await getCategories();
+      setCategories(data);
+    };
+
+    loadCategories();
+  }, []);
 
   const updateCategory = (categoryName: string) => {
     const params = new URLSearchParams(searchParams.toString());

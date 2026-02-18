@@ -13,6 +13,8 @@ import {
   getProductById,
   updateProduct,
 } from "../../lib/api/product";
+import { getCategories } from "../../lib/api/category";
+import { categories as fallbackCategories, type Category } from "../../data/categories";
 import { useState, ChangeEvent, useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
@@ -63,15 +65,17 @@ export default function SellPage() {
 
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [loadingEditData, setLoadingEditData] = useState(isEditMode);
+  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
 
   const { accessToken, user, loading } = useContext(UserContext);
 
-  const CATEGORY_MAP: CategoryMap = {
-    Electronics: ["Mobile", "Laptop", "Tablet", "Camera", "Accessories"],
-    Vehicles: ["Car", "Bike", "Scooter", "Truck"],
-    "Home & Garden": ["Furniture", "Appliances", "Decoration & Art","Tools & Equipment"],
-    Fashion: ["Men", "Women", "Kids", "Footwear"],
-  };
+  const CATEGORY_MAP: CategoryMap = categories.reduce<CategoryMap>(
+    (acc, category) => {
+      acc[category.name] = category.subcategories;
+      return acc;
+    },
+    {},
+  );
 
   const validateRequiredFields = (data: SellFormData) => {
     const {
@@ -100,6 +104,15 @@ export default function SellPage() {
 
     return true;
   };
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      const data = await getCategories();
+      setCategories(data);
+    };
+
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
