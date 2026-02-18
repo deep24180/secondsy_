@@ -313,39 +313,41 @@ export default function SellPage() {
   const PHONE_REGEX = /^[6-9]\d{9}$/;
 
   const inputClass =
-    "w-full h-12 rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition";
+    "h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20";
+
+  const sectionTitleClass =
+    "text-lg font-semibold tracking-tight text-slate-900 md:text-xl";
+  const sectionCardClass =
+    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6";
 
   if (loading || (!isEditMode && (!user?.id || !accessToken))) {
     return <PageLoader message="Checking access..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 py-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-slate-900 mb-2">
-          {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
-        </h1>
-        <p className="text-slate-500 mb-12">
-          {isEditMode
-            ? "Update your listing details and save your changes."
-            : "Create a high-quality listing to attract more buyers."}
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 md:p-14 space-y-14"
-        >
+    <div className="min-h-screen bg-slate-50">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+            {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            {isEditMode
+              ? "Update your listing and save changes."
+              : "Add the details below to publish your listing."}
+          </p>
           {loadingEditData && (
-            <p className="text-sm text-slate-500">Loading item details...</p>
+            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              Loading item details...
+            </p>
           )}
+        </section>
 
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              General Information
-            </h3>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <section className={sectionCardClass}>
+            <h3 className={sectionTitleClass}>General Information</h3>
 
-            <div className="space-y-6">
+            <div className="mt-4 space-y-4">
               <Input
                 name="title"
                 value={formData.title}
@@ -355,7 +357,7 @@ export default function SellPage() {
                 required
               />
 
-              <div className="grid md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border">
+              <div className="grid gap-4 md:grid-cols-3">
                 <Select
                   value={formData.category}
                   onValueChange={(value) =>
@@ -378,6 +380,7 @@ export default function SellPage() {
                     ))}
                   </SelectContent>
                 </Select>
+
                 <Select
                   value={formData.subcategory}
                   disabled={!formData.category}
@@ -423,13 +426,10 @@ export default function SellPage() {
             </div>
           </section>
 
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              Product Condition
-            </h3>
+          <section className={sectionCardClass}>
+            <h3 className={sectionTitleClass}>Product Condition</h3>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
               {(["New", "Like New", "Good", "Fair"] as ConditionType[]).map(
                 (item) => (
                   <label key={item} className="cursor-pointer">
@@ -442,8 +442,8 @@ export default function SellPage() {
                       className="peer hidden"
                       required
                     />
-                    <div className="rounded-2xl border p-5 text-center shadow-sm hover:shadow-md peer-checked:border-blue-600 peer-checked:bg-blue-50 transition">
-                      <p className="font-bold">{item}</p>
+                    <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-medium text-slate-700 transition peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                      {item}
                     </div>
                   </label>
                 ),
@@ -451,32 +451,26 @@ export default function SellPage() {
             </div>
           </section>
 
-          {/* ================= DESCRIPTION ================= */}
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              Description
-            </h3>
-
+          <section className={sectionCardClass}>
+            <h3 className={sectionTitleClass}>Description</h3>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               placeholder="Describe your item in detail"
-              className="w-full min-h-[160px] rounded-xl border border-slate-300 bg-white p-4 shadow-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition"
+              className="mt-4 min-h-[150px] w-full rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20"
               required
             />
           </section>
 
-          {/* ================= PHOTOS ================= */}
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              Photos
-            </h3>
+          <section className={sectionCardClass}>
+            <div className="flex items-center justify-between">
+              <h3 className={sectionTitleClass}>Photos</h3>
+              <p className="text-xs text-slate-500">{formData.images.length}/5</p>
+            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="col-span-2 md:col-span-5 grid md:grid-cols-[1fr_auto] gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
+              <div className="col-span-2 grid gap-3 md:col-span-5 md:grid-cols-[1fr_auto]">
                 <Input
                   type="url"
                   value={imageUrlInput}
@@ -484,7 +478,7 @@ export default function SellPage() {
                   placeholder="https://example.com/image.jpg"
                   className={inputClass}
                 />
-                <Button type="button" onClick={handleAddImageUrl}>
+                <Button type="button" onClick={handleAddImageUrl} className="h-12">
                   Add Image Link
                 </Button>
               </div>
@@ -492,33 +486,25 @@ export default function SellPage() {
               {formData.images.map((img, index) => (
                 <div
                   key={index}
-                  className="relative aspect-square rounded-2xl overflow-hidden border shadow hover:shadow-lg transition"
+                  className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm"
                 >
-                  <img
-                    src={img}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={img} alt="Preview" className="h-full w-full object-cover" />
                   <Button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1 hover:bg-red-500 hover:text-white transition"
+                    className="absolute right-2 top-2 h-7 min-w-7 rounded-full bg-white px-2 text-xs font-semibold text-rose-600 hover:bg-rose-600 hover:text-white"
                   >
-                    ✕
+                    X
                   </Button>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* ================= CONTACT ================= */}
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              Contact Information
-            </h3>
+          <section className={sectionCardClass}>
+            <h3 className={sectionTitleClass}>Contact Information</h3>
 
-            <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border">
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Input
                 type="email"
                 name="email"
@@ -537,30 +523,27 @@ export default function SellPage() {
             </div>
           </section>
 
-          {/* ================= DELIVERY ================= */}
-          <section>
-            <h3 className="text-2xl font-extrabold flex items-center gap-3 mb-8">
-              <span className="w-2 h-8 bg-blue-600 rounded-full" />
-              Delivery & Location
-            </h3>
-
-            <div className="flex gap-6 mb-6">
-              <label className="flex items-center gap-2">
+          <section className={sectionCardClass}>
+            <h3 className={sectionTitleClass}>Delivery & Location</h3>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700">
                 <Input
                   type="checkbox"
                   name="deliveryPickup"
                   checked={formData.deliveryPickup}
                   onChange={handleChange}
+                  className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 p-0 shadow-none focus:ring-0"
                 />
                 Self Pickup
               </label>
 
-              <label className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700">
                 <Input
                   type="checkbox"
                   name="deliveryShipping"
                   checked={formData.deliveryShipping}
                   onChange={handleChange}
+                  className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 p-0 shadow-none focus:ring-0"
                 />
                 Shipping Available
               </label>
@@ -571,19 +554,21 @@ export default function SellPage() {
               value={formData.location}
               onChange={handleChange}
               placeholder="City, State"
-              className={inputClass}
+              className="mt-4 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20"
             />
           </section>
 
-          <Button
-            type="submit"
-            disabled={loadingEditData}
-            className="w-full h-14 rounded-2xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition shadow-lg"
-          >
-            {isEditMode ? "Save Changes" : "Publish Advertisement"}
-          </Button>
+          <div className="pt-1">
+            <Button
+              type="submit"
+              disabled={loadingEditData}
+              className="h-12 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              {isEditMode ? "Save Changes" : "Publish Advertisement"}
+            </Button>
+          </div>
         </form>
-      </div>
+      </main>
     </div>
   );
 }
