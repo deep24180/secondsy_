@@ -115,3 +115,24 @@ export const updateProduct = async (
     throw error;
   }
 };
+
+export const deleteProduct = async (id: string, accessToken: string) => {
+  try {
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Error while deleting product:", error);
+    throw error;
+  }
+};

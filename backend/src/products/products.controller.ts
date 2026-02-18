@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -50,5 +51,12 @@ export class ProductsController {
   update(@Param('id') id: string, @Body() dto: UpdateProductDto, @Req() req) {
     const supabaseId = req.user.sub;
     return this.productsService.update(id, supabaseId, dto);
+  }
+
+  @UseGuards(SupabaseAuthGuard)
+  @Delete(':id')
+  remove(@Param('id') id: string, @Req() req) {
+    const supabaseId = req.user.sub;
+    return this.productsService.remove(id, supabaseId);
   }
 }

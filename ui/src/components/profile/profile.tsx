@@ -15,9 +15,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { getProducts, updateProductStatus } from "../../lib/api/product";
+import {
+  deleteProduct,
+  getProducts,
+  updateProductStatus,
+} from "../../lib/api/product";
 import { UserContext } from "../../context/user-context";
 import PageLoader from "../ui/page-loader";
+import DeleteModal from "../modal/DeleteModal";
 
 type Status = "Active" | "Sold" | "Expired";
 type Ad = {
@@ -58,6 +63,8 @@ export default function MyAdsPage() {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loadingAds, setLoadingAds] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adToDelete, setAdToDelete] = useState<Ad | null>(null);
+  const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadAds = async () => {
@@ -178,8 +185,33 @@ export default function MyAdsPage() {
     );
   };
 
-  const remove = (id: string) =>
-    setAds((prev) => prev.filter((ad) => ad.id !== id));
+  const requestRemove = (ad: Ad) => {
+    setAdToDelete(ad);
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingAdId) return;
+    setAdToDelete(null);
+  };
+
+  const confirmRemove = async () => {
+    if (!accessToken || !adToDelete) return;
+
+    setDeletingAdId(adToDelete.id);
+
+    try {
+      await deleteProduct(adToDelete.id, accessToken);
+      setAds((prev) => prev.filter((ad) => ad.id !== adToDelete.id));
+      setAdToDelete(null);
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete product.",
+      );
+    } finally {
+      setDeletingAdId(null);
+    }
+  };
 
   const changeTab = (tab: "All" | "Active" | "Sold" | "Expired") => {
     setActiveTab(tab);
@@ -243,9 +275,7 @@ export default function MyAdsPage() {
             <Link href="/messages" className={getNavClass("Messages")}>
               Messages
             </Link>
-            <Link href="/saved" className={getNavClass("Saved")}>
-              Saved
-            </Link>
+
             <div className={getNavClass("Profile")}>Profile</div>
             <button
               type="button"
@@ -387,10 +417,11 @@ export default function MyAdsPage() {
                     )}
 
                     <Button
-                      onClick={() => remove(ad.id)}
+                      onClick={() => requestRemove(ad)}
                       type="button"
                       variant="ghost"
                       className={dangerBtn}
+                      disabled={deletingAdId === ad.id}
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -428,6 +459,18 @@ export default function MyAdsPage() {
           </div>
         </main>
       </div>
+      <DeleteModal
+        isOpen={Boolean(adToDelete)}
+        title={
+          adToDelete
+            ? `Delete "${adToDelete.title}"?`
+            : "Delete this ad permanently?"
+        }
+        description="This ad will be removed permanently and cannot be recovered."
+        isLoading={Boolean(deletingAdId)}
+        onCancel={closeDeleteModal}
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

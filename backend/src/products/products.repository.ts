@@ -57,4 +57,20 @@ export class ProductsRepository {
       where: { id },
     });
   }
+
+  async deleteByIdAndUser(id: string, userId: string) {
+    const result = await this.prisma.product.deleteMany({
+      where: { id, userId },
+    });
+
+    if (result.count === 0) {
+      return null;
+    }
+
+    await this.prisma.savedProduct.deleteMany({
+      where: { productId: id },
+    });
+
+    return { success: true };
+  }
 }

@@ -48,4 +48,14 @@ export class ProductsService {
 
     return product;
   }
+
+  async remove(id: string, userId: string) {
+    const removed = await this.productsRepo.deleteByIdAndUser(id, userId);
+
+    if (!removed) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return { success: true };
+  }
 }
