@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "../../components/ui/button";
 import PageLoader from "../../components/ui/page-loader";
@@ -16,6 +17,12 @@ import {
 } from "../../lib/api/message";
 import { API_URL } from "../../lib/api/user";
 import { markConversationSeen } from "../../lib/message-unread";
+import {
+  createImageMessageContent,
+  getImageMessageUrl,
+  uploadImageToCloudinary,
+} from "../../lib/cloudinary";
+import { Input } from "@/components/ui/input";
 
 type WsIncoming = {
   type: string;
@@ -61,9 +68,11 @@ export default function MessagesPage() {
   const [loadingPage, setLoadingPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldReconnectRef = useRef(true);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -300,6 +309,71 @@ export default function MessagesPage() {
     setNewMessage("");
   };
 
+  const sendImageMessage = async (imageUrl: string) => {
+    if (!selectedConversationId || !accessToken) return;
+
+    const socket = socketRef.current;
+    const content = createImageMessageContent(imageUrl);
+
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(
+        JSON.stringify({
+          type: "send_message",
+          payload: {
+            conversationId: selectedConversationId,
+            content,
+          },
+        }),
+      );
+      return;
+    }
+
+    const response = await sendConversationMessage(
+      selectedConversationId,
+      content,
+      accessToken,
+    );
+
+    setMessagesByConversation((prev) => ({
+      ...prev,
+      [selectedConversationId]: [
+        ...(prev[selectedConversationId] || []),
+        response.message,
+      ],
+    }));
+  };
+
+  const handleImageSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      return;
+    }
+
+    if (!selectedConversationId || !accessToken) {
+      setError("Select a conversation before sharing an image.");
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      setError(null);
+
+      const imageUrl = await uploadImageToCloudinary(file);
+      await sendImageMessage(imageUrl);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to upload and send image.",
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   if (loading || loadingPage) {
     return <PageLoader message="Loading messages..." />;
   }
@@ -366,6 +440,7 @@ export default function MessagesPage() {
             ) : (
               selectedMessages.map((message) => {
                 const isMine = message.senderId === user.id;
+                const imageUrl = getImageMessageUrl(message.content);
 
                 return (
                   <div
@@ -376,7 +451,19 @@ export default function MessagesPage() {
                         : "bg-white text-slate-800"
                     }`}
                   >
-                    <p>{message.content}</p>
+                    {imageUrl ? (
+                      <a href={imageUrl} target="_blank" rel="noreferrer">
+                        <Image
+                          src={imageUrl}
+                          alt="Shared in conversation"
+                          width={720}
+                          height={720}
+                          className="max-h-72 w-auto rounded-lg object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <p>{message.content}</p>
+                    )}
                     <p className={`mt-1 text-[11px] ${isMine ? "text-slate-300" : "text-slate-400"}`}>
                       {formatMessageDate(message.createdAt)}
                     </p>
@@ -387,7 +474,22 @@ export default function MessagesPage() {
           </div>
 
           <form onSubmit={sendMessage} className="mt-3 flex gap-2">
-            <input
+            <Input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!selectedConversationId || isUploadingImage}
+              onClick={() => imageInputRef.current?.click()}
+            >
+              {isUploadingImage ? "Uploading..." : "Image"}
+            </Button>
+            <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message"
