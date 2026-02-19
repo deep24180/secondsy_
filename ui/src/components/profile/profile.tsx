@@ -43,10 +43,10 @@ type ProductApiItem = {
   id: string;
   title: string;
   price: number | string;
-  status?: Status;
-  images?: string[];
-  location?: string;
-  createdAt?: string;
+  status: Status;
+  images: string[];
+  location: string;
+  createdAt: string;
   userId: string;
 };
 

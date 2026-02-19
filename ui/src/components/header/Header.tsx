@@ -128,7 +128,9 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <h1 className="text-xl font-bold text-primary">Secondsy</h1>
+        <Link href="/" className="text-xl font-bold text-primary">
+          Secondsy
+        </Link>
 
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="hidden md:block">
