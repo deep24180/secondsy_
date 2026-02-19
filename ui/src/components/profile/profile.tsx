@@ -3,6 +3,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Plus,
   Eye,
@@ -115,43 +116,45 @@ export default function MyAdsPage() {
   }, [user?.id]);
 
   const card =
-    "bg-white rounded-xl border shadow-sm hover:shadow-md transition";
+    "rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg";
+
   const softBtn =
-    "bg-gray-100 hover:bg-gray-200 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2";
+    "rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center gap-2";
+
   const dangerBtn =
-    "w-10 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg flex items-center justify-center";
+    "h-10 w-10 rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 flex items-center justify-center disabled:opacity-60";
 
   const getNavClass = (item: string) =>
-    `px-4 py-3 rounded-lg cursor-pointer ${
+    `flex items-center rounded-xl px-4 py-2.5 text-sm transition ${
       item === "My Ads"
-        ? "bg-blue-50 text-blue-600 font-semibold"
-        : "text-gray-500 hover:bg-gray-100"
+        ? "bg-blue-600 text-white font-semibold shadow-sm"
+        : "text-slate-600 hover:bg-slate-100"
     }`;
 
   const getTabClass = (tab: string) =>
-    `pb-3 font-semibold whitespace-nowrap ${
+    `rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
       activeTab === tab
-        ? "border-b-4 border-blue-600 text-blue-600"
-        : "text-gray-500 hover:text-blue-600"
+        ? "bg-blue-600 text-white shadow-sm"
+        : "text-slate-600 hover:bg-slate-100"
     }`;
 
   const getCardClass = (status: Status) =>
-    `${card} p-4 flex flex-col sm:flex-row gap-4 ${
-      status === "Sold" ? "opacity-70" : ""
+    `${card} p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 ${
+      status === "Sold" ? "opacity-80" : ""
     }`;
 
   const getBadgeClass = (status: Status) =>
-    `text-xs font-bold uppercase px-2 py-0.5 rounded ${
+    `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
       status === "Sold"
-        ? "bg-gray-200 text-gray-600"
+        ? "bg-slate-200 text-slate-700"
         : status === "Expired"
-          ? "bg-yellow-100 text-yellow-700"
-          : "bg-green-100 text-green-700"
+          ? "bg-amber-100 text-amber-700"
+          : "bg-emerald-100 text-emerald-700"
     }`;
 
   const getPriceClass = (status: Status) =>
-    `text-xl font-extrabold ${
-      status === "Sold" ? "text-gray-400" : "text-blue-600"
+    `mt-2 text-xl font-extrabold ${
+      status === "Sold" ? "text-slate-400" : "text-blue-700"
     }`;
 
   const canShowStats = (status: Status) => status === "Active";
@@ -258,19 +261,23 @@ export default function MyAdsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f7f8] flex justify-center py-4 sm:py-6 lg:py-8">
-      <div className="w-full max-w-[1200px] flex flex-col lg:flex-row gap-6 lg:gap-8 px-4 sm:px-6">
-        {/* SIDEBAR (DESKTOP ONLY) */}
-        <aside className="hidden lg:block w-64 bg-white rounded-xl border shadow-sm p-6">
-          <div className="flex items-center gap-3 border-b pb-4">
-            <div className="w-12 h-12 rounded-full bg-gray-200" />
-            <div>
-              <p className="font-bold text-sm">{user?.email ?? "Guest"}</p>
-              <p className="text-xs text-gray-500">Status: Active</p>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50 py-5 sm:py-8">
+      <div className="pointer-events-none absolute -top-24 left-0 h-64 w-64 rounded-full bg-blue-100/70 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-cyan-100/60 blur-3xl" />
+      <div className="relative mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
+        <aside className="hidden w-72 self-start rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-sm lg:sticky lg:top-6 lg:block">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">
+              {(user?.email ?? "G").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-800">
+                {user?.email ?? "Guest"}
+              </p>
+              <p className="text-xs text-slate-500">Seller dashboard</p>
             </div>
           </div>
-
-          <nav className="mt-6 space-y-1">
+          <nav className="mt-5 space-y-1.5">
             <div className={getNavClass("My Ads")}>My Ads</div>
             <Link href="/messages" className={getNavClass("Messages")}>
               Messages
@@ -286,57 +293,67 @@ export default function MyAdsPage() {
             </button>
           </nav>
         </aside>
-
-        <main className="flex-1 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-extrabold">My Ads</h1>
-              <p className="text-gray-500">
-                Manage your listed items and track their performance.
-              </p>
-            </div>
-
-            <Button
-              onClick={() => router.push("/sell-item")}
-              type="button"
-              variant="default"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow flex items-center gap-2 w-fit"
-            >
-              <Plus size={18} />
-              Post New Ad
-            </Button>
-          </div>
-
-          <div className="flex gap-6 sm:gap-8 border-b overflow-x-auto">
-            {["All", "Active", "Sold", "Expired"].map((tab) => (
+        <main className="flex-1 space-y-5">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                  My Ads
+                </h1>
+                <p className="mt-1 text-sm text-slate-500 sm:text-base">
+                  Manage your listings and keep them fresh for buyers.
+                </p>
+              </div>
               <Button
-                key={tab}
-                onClick={() =>
-                  changeTab(tab as "All" | "Active" | "Sold" | "Expired")
-                }
+                onClick={() => router.push("/sell-item")}
                 type="button"
-                variant="ghost"
-                className={getTabClass(tab)}
+                variant="default"
+                className="h-11 rounded-xl bg-blue-600 px-6 font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
-                {tab}
+                <Plus size={18} />
+                Post New Ad
               </Button>
-            ))}
+            </div>
+            <div className="mt-5 flex items-center gap-2 text-sm text-slate-500">
+              <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
+                {ads.length} total
+              </span>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">
+                {ads.filter((ad) => ad.status === "Active").length} active
+              </span>
+            </div>
           </div>
-
+          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-sm">
+            <div className="flex gap-2 overflow-x-auto">
+              {["All", "Active", "Sold", "Expired"].map((tab) => (
+                <Button
+                  key={tab}
+                  onClick={() =>
+                    changeTab(tab as "All" | "Active" | "Sold" | "Expired")
+                  }
+                  type="button"
+                  variant="ghost"
+                  className={getTabClass(tab)}
+                >
+                  {tab}
+                </Button>
+              ))}
+            </div>
+          </div>
           {loadingAds && (
-            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-gray-500">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-500 shadow-sm">
               Loading your ads...
             </div>
           )}
 
           {!loadingAds && error && (
-            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-red-600">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-sm">
               {error}
             </div>
           )}
-
+          
           {!loadingAds && !error && paginatedAds.length === 0 && (
-            <div className="bg-white rounded-xl border shadow-sm p-6 text-sm text-gray-500">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-500 shadow-sm">
               No ads yet. Create your first listing.
             </div>
           )}
@@ -345,40 +362,52 @@ export default function MyAdsPage() {
             !error &&
             paginatedAds.map((ad) => (
               <div key={ad.id} className={getCardClass(ad.status)}>
-                <div className="w-full sm:w-48 h-40 sm:h-32 rounded-lg bg-gray-200" />
-
-                <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+                <div className="relative h-44 w-full overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-52">
+                  {ad.images[0] ? (
+                    <Image
+                      src={ad.images[0]}
+                      alt={ad.title}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, 208px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-400">
+                      No Image
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
                     <div>
                       <span className={getBadgeClass(ad.status)}>
                         {ad.status}
                       </span>
-
-                      <h3 className="text-lg font-bold mt-1">{ad.title}</h3>
-
-                      <p className="text-xs text-gray-500">
-                        {(ad.location || "Unknown location") + " • "}
+                      <h3 className="mt-2 text-lg font-bold text-slate-900">
+                        {ad.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {(ad.location || "Unknown location") + " | "}
                         {formatDate(ad.createdAt)}
                       </p>
-
                       <p className={getPriceClass(ad.status)}>
                         {formatPrice(ad.price)}
                       </p>
                     </div>
 
                     {canShowStats(ad.status) && (
-                      <div className="text-sm text-gray-500 flex gap-4 items-center">
-                        <span className="flex items-center gap-1">
-                          <Eye size={16} /> {ad.views}
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
+                          <Eye size={15} /> {ad.views}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Heart size={16} /> {ad.likes}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
+                          <Heart size={15} /> {ad.likes}
                         </span>
                       </div>
                     )}
                   </div>
-
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {ad.status === "Active" && (
                       <>
                         <Button
@@ -429,20 +458,18 @@ export default function MyAdsPage() {
                 </div>
               </div>
             ))}
-
-          <div className="flex justify-center gap-2 pt-4 flex-wrap">
+          <div className="flex flex-wrap justify-center gap-2 pt-2">
             <Button
               title="Previous page"
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
               type="button"
               variant="outline"
-              className="w-10 h-10 rounded-lg border flex items-center justify-center disabled:opacity-40"
+              className="h-10 w-10 rounded-xl border-slate-200 bg-white/90 text-slate-600 shadow-sm disabled:opacity-40"
             >
               <ChevronLeft size={18} />
             </Button>
-
-            <span className="w-10 h-10 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center">
+            <span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-blue-600 px-3 text-sm font-bold text-white shadow-sm">
               {page}
             </span>
 
@@ -452,7 +479,7 @@ export default function MyAdsPage() {
               onClick={() => setPage((p) => p + 1)}
               type="button"
               variant="outline"
-              className="w-10 h-10 rounded-lg border flex items-center justify-center disabled:opacity-40"
+              className="h-10 w-10 rounded-xl border-slate-200 bg-white/90 text-slate-600 shadow-sm disabled:opacity-40"
             >
               <ChevronRight size={18} />
             </Button>
