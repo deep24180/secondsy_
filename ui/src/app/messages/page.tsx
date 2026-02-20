@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "../../components/ui/button";
 import PageLoader from "../../components/ui/page-loader";
 import { UserContext } from "../../context/user-context";
-import ImagePreviewModal from "../../components/modal/ImagePreviewModal";
 import {
   ChatMessage,
   Conversation,
@@ -71,7 +70,6 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldReconnectRef = useRef(true);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -454,12 +452,7 @@ export default function MessagesPage() {
                     }`}
                   >
                     {imageUrl ? (
-                      <button
-                        type="button"
-                        onClick={() => setPreviewImageUrl(imageUrl)}
-                        className="block cursor-zoom-in overflow-hidden rounded-lg"
-                        aria-label="Open image preview"
-                      >
+                      <a href={imageUrl} target="_blank" rel="noreferrer">
                         <Image
                           src={imageUrl}
                           alt="Shared in conversation"
@@ -467,7 +460,7 @@ export default function MessagesPage() {
                           height={720}
                           className="max-h-72 w-auto rounded-lg object-cover"
                         />
-                      </button>
+                      </a>
                     ) : (
                       <p>{message.content}</p>
                     )}
@@ -508,11 +501,6 @@ export default function MessagesPage() {
           </form>
         </div>
       </section>
-      <ImagePreviewModal
-        isOpen={Boolean(previewImageUrl)}
-        imageUrl={previewImageUrl}
-        onClose={() => setPreviewImageUrl(null)}
-      />
     </main>
   );
 }
