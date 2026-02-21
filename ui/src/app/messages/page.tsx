@@ -23,6 +23,7 @@ import {
   uploadImageToCloudinary,
 } from "../../lib/cloudinary";
 import { Input } from "../../components/ui/input";
+import ImagePreviewModal from "../../components/modal/ImagePreviewModal";
 
 type WsIncoming = {
   type: string;
@@ -54,6 +55,23 @@ const formatMessageDate = (value: string) => {
   });
 };
 
+const getConversationPartnerId = (conversation: Conversation, currentUserId: string) =>
+  conversation.participantAId === currentUserId
+    ? conversation.participantBId
+    : conversation.participantAId;
+
+const getMessagePreview = (content: string) => {
+  if (getImageMessageUrl(content)) return "Sent an image";
+  return content || "No messages yet";
+};
+
+const getConversationLatestMessage = (
+  conversation: Conversation,
+  messagesByConversation: Record<string, ChatMessage[]>,
+) =>
+  messagesByConversation[conversation.id]?.slice(-1)[0] ||
+  conversation.messages?.[0];
+
 export default function MessagesPage() {
   const { user, loading, accessToken } = useContext(UserContext);
   const router = useRouter();
@@ -70,9 +88,11 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldReconnectRef = useRef(true);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -80,6 +100,25 @@ export default function MessagesPage() {
     if (!selectedConversationId) return [];
     return messagesByConversation[selectedConversationId] || [];
   }, [messagesByConversation, selectedConversationId]);
+
+  const sortedConversations = useMemo(() => {
+    return [...conversations].sort((a, b) => {
+      const aLast =
+        getConversationLatestMessage(a, messagesByConversation)?.createdAt ||
+        a.lastMessageAt ||
+        a.createdAt;
+      const bLast =
+        getConversationLatestMessage(b, messagesByConversation)?.createdAt ||
+        b.lastMessageAt ||
+        b.createdAt;
+      return new Date(bLast).getTime() - new Date(aLast).getTime();
+    });
+  }, [conversations, messagesByConversation]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find((conversation) => conversation.id === selectedConversationId) || null,
+    [conversations, selectedConversationId],
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -108,7 +147,12 @@ export default function MessagesPage() {
         setConversations(convos);
 
         if (convos.length > 0) {
-          const firstId = convos[0].id;
+          const sorted = [...convos].sort((a, b) => {
+            const aLast = a.messages?.[0]?.createdAt || a.lastMessageAt || a.createdAt;
+            const bLast = b.messages?.[0]?.createdAt || b.lastMessageAt || b.createdAt;
+            return new Date(bLast).getTime() - new Date(aLast).getTime();
+          });
+          const firstId = sorted[0].id;
           setSelectedConversationId((current) => current || firstId);
         }
       } catch (err) {
@@ -263,6 +307,10 @@ export default function MessagesPage() {
     );
   }, [selectedConversationId, socketReady]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [selectedConversationId, selectedMessages.length]);
+
   const sendMessage = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -383,124 +431,238 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="min-h-screen max-w-6xl mx-auto px-4 py-10">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Messages</h1>
-        <Link href="/profile" className="text-sm text-slate-500 hover:text-slate-700">
-          Back to profile
-        </Link>
-      </div>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#e2e8f0_50%,_#dbeafe_100%)] px-4 py-8 sm:py-10">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Inbox</p>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Messages</h1>
+          </div>
+          <Link
+            href="/profile"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
+          >
+            Back to profile
+          </Link>
+        </header>
 
-      {error ? (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
+        {error ? (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-      <section className="grid gap-4 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[280px_1fr]">
-        <aside className="space-y-2 border-b pb-3 md:border-b-0 md:border-r md:pb-0 md:pr-3">
-          {conversations.length === 0 ? (
-            <p className="text-sm text-slate-500">No conversations yet.</p>
-          ) : (
-            conversations.map((conversation) => {
-              const isActive = selectedConversationId === conversation.id;
-              const lastMessage = messagesByConversation[conversation.id]?.slice(-1)[0];
-              const otherId =
-                conversation.participantAId === user.id
-                  ? conversation.participantBId
-                  : conversation.participantAId;
+        <section className="grid min-h-[70vh] gap-4 rounded-3xl border border-white/70 bg-white/90 p-3 shadow-xl md:grid-cols-[320px_1fr] md:p-4">
+          <aside className="flex h-[70vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-2 md:p-3">
+            <div className="mb-2 px-2 py-1 text-xs font-medium text-slate-500">
+              Conversations ({sortedConversations.length})
+            </div>
 
-              return (
-                <button
-                  key={conversation.id}
-                  type="button"
-                  onClick={() => setSelectedConversationId(conversation.id)}
-                  className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                    isActive
-                      ? "border-slate-900 bg-slate-100"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <p className="text-sm font-semibold text-slate-800">User: {otherId}</p>
-                  <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                    {lastMessage?.content || "No messages yet"}
-                  </p>
-                </button>
-              );
-            })
-          )}
-        </aside>
+            <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+              {sortedConversations.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+                  No conversations yet.
+                </p>
+              ) : (
+                sortedConversations.map((conversation) => {
+                  const isActive = selectedConversationId === conversation.id;
+                  const partnerId = getConversationPartnerId(conversation, user.id);
+                  const partnerInitial = partnerId.slice(0, 1).toUpperCase();
+                  const lastMessage = getConversationLatestMessage(
+                    conversation,
+                    messagesByConversation,
+                  );
+                  const previewText = getMessagePreview(lastMessage?.content || "");
+                  const previewTime =
+                    lastMessage?.createdAt ||
+                    conversation.lastMessageAt ||
+                    conversation.createdAt;
 
-        <div className="flex min-h-[420px] flex-col">
-          <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border bg-slate-50 p-3">
-            {!selectedConversationId ? (
-              <p className="text-sm text-slate-500">Select a conversation.</p>
-            ) : selectedMessages.length === 0 ? (
-              <p className="text-sm text-slate-500">No messages in this conversation yet.</p>
-            ) : (
-              selectedMessages.map((message) => {
-                const isMine = message.senderId === user.id;
-                const imageUrl = getImageMessageUrl(message.content);
+                  return (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      onClick={() => setSelectedConversationId(conversation.id)}
+                      className={`h-20 w-full rounded-xl border px-3 py-3 text-left transition-all ${
+                        isActive
+                          ? "border-slate-900 bg-slate-900 text-white shadow-lg"
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {partnerInitial}
+                        </div>
 
-                return (
-                  <div
-                    key={message.id}
-                    className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
-                      isMine
-                        ? "ml-auto bg-slate-900 text-white"
-                        : "bg-white text-slate-800"
-                    }`}
-                  >
-                    {imageUrl ? (
-                      <a href={imageUrl} target="_blank" rel="noreferrer">
-                        <Image
-                          src={imageUrl}
-                          alt="Shared in conversation"
-                          width={720}
-                          height={720}
-                          className="max-h-72 w-auto rounded-lg object-cover"
-                        />
-                      </a>
-                    ) : (
-                      <p>{message.content}</p>
-                    )}
-                    <p className={`mt-1 text-[11px] ${isMine ? "text-slate-300" : "text-slate-400"}`}>
-                      {formatMessageDate(message.createdAt)}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-sm font-semibold">
+                              User {partnerId}
+                            </p>
+                            <span
+                              className={`shrink-0 text-[11px] ${
+                                isActive ? "text-slate-300" : "text-slate-400"
+                              }`}
+                            >
+                              {formatMessageDate(previewTime)}
+                            </span>
+                          </div>
+                          <p
+                            className={`mt-1 line-clamp-1 text-xs ${
+                              isActive ? "text-slate-200" : "text-slate-500"
+                            }`}
+                          >
+                            {previewText}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+
+          <div className="flex h-[70vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+              {selectedConversation ? (
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                      Conversation
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      User {getConversationPartnerId(selectedConversation, user.id)}
                     </p>
                   </div>
-                );
-              })
-            )}
-          </div>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      socketReady
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {socketReady ? "Live" : "Reconnecting"}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Select a conversation to start chatting.</p>
+              )}
+            </div>
 
-          <form onSubmit={sendMessage} className="mt-3 flex gap-2">
-            <Input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageSelect}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!selectedConversationId || isUploadingImage}
-              onClick={() => imageInputRef.current?.click()}
+            <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4">
+              {!selectedConversationId ? (
+                <p className="text-sm text-slate-500">Select a conversation.</p>
+              ) : selectedMessages.length === 0 ? (
+                <p className="text-sm text-slate-500">No messages in this conversation yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {selectedMessages.map((message) => {
+                    const isMine = message.senderId === user.id;
+                    const imageUrl = getImageMessageUrl(message.content);
+
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm sm:max-w-[75%] ${
+                            isMine
+                              ? "rounded-br-md bg-slate-900 text-white"
+                              : "rounded-bl-md bg-white text-slate-800"
+                          }`}
+                        >
+                          {imageUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImageUrl(imageUrl)}
+                              className="block"
+                              aria-label="Open image preview"
+                            >
+                              <Image
+                                src={imageUrl}
+                                alt="Shared in conversation"
+                                width={720}
+                                height={720}
+                                className="max-h-72 w-auto rounded-xl object-cover"
+                              />
+                            </button>
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                          )}
+                          <p
+                            className={`mt-1 text-[11px] ${
+                              isMine ? "text-slate-300" : "text-slate-400"
+                            }`}
+                          >
+                            {formatMessageDate(message.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            <form
+              onSubmit={sendMessage}
+              className="border-t border-slate-200 bg-white p-3 sm:p-4"
             >
-              {isUploadingImage ? "Uploading..." : "Image"}
-            </Button>
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message"
-              className="h-10 flex-1 rounded-lg border px-3 text-sm outline-none focus:border-slate-400"
-            />
-            <Button type="submit" disabled={!selectedConversationId || !newMessage.trim()}>
-              Send
-            </Button>
-          </form>
-        </div>
-      </section>
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!selectedConversationId || isUploadingImage}
+                  onClick={() => imageInputRef.current?.click()}
+                  className="shrink-0"
+                >
+                  {isUploadingImage ? "Uploading..." : "Image"}
+                </Button>
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={
+                    selectedConversationId
+                      ? "Type a message"
+                      : "Choose a conversation first"
+                  }
+                  disabled={!selectedConversationId}
+                  className="h-10 flex-1 rounded-full border-slate-300 bg-slate-50 px-4"
+                />
+                <Button
+                  type="submit"
+                  disabled={!selectedConversationId || !newMessage.trim()}
+                  className="shrink-0"
+                >
+                  Send
+                </Button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <ImagePreviewModal
+        isOpen={Boolean(previewImageUrl)}
+        imageUrl={previewImageUrl}
+        onClose={() => setPreviewImageUrl(null)}
+      />
     </main>
   );
 }
