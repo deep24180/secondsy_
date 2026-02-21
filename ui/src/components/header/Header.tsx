@@ -8,32 +8,12 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
 import { SearchContext } from "../../context/search-context";
-import { getConversations } from "../../lib/api/message";
-import {
-  getUnreadConversationsCount,
-  MESSAGE_READ_EVENT,
-} from "../../lib/message-unread";
-import { API_URL } from "../../lib/api/user";
-
-type HeaderWsIncoming = {
-  type?: string;
-};
-
-const toWsUrl = (baseUrl: string, token: string) => {
-  const normalized = baseUrl.replace(/\/$/, "");
-  const wsBase = normalized.startsWith("https://")
-    ? normalized.replace("https://", "wss://")
-    : normalized.replace("http://", "ws://");
-
-  return `${wsBase}/ws?token=${encodeURIComponent(token)}`;
-};
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, accessToken } = useContext(UserContext);
+  const { user, loading } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { query, setQuery, clearQuery } = useContext(SearchContext);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -50,55 +30,6 @@ export default function Header() {
 
     router.push("/sell-item");
   };
-
-  useEffect(() => {
-    if (!isLoggedIn || !accessToken || !user?.id) return;
-
-    let mounted = true;
-    let socket: WebSocket | null = null;
-
-    const loadUnreadCount = async () => {
-      try {
-        const conversations = await getConversations(accessToken);
-        if (!mounted) return;
-
-        setUnreadCount(getUnreadConversationsCount(conversations, user.id));
-      } catch {
-        if (mounted) setUnreadCount(0);
-      }
-    };
-
-    void loadUnreadCount();
-
-    const handleUnreadChange = () => {
-      void loadUnreadCount();
-    };
-
-    window.addEventListener(MESSAGE_READ_EVENT, handleUnreadChange);
-    window.addEventListener("storage", handleUnreadChange);
-
-    socket = new WebSocket(toWsUrl(API_URL, accessToken));
-    socket.onmessage = (event) => {
-      let incoming: HeaderWsIncoming;
-
-      try {
-        incoming = JSON.parse(event.data) as HeaderWsIncoming;
-      } catch {
-        return;
-      }
-
-      if (incoming.type === "new_message") {
-        void loadUnreadCount();
-      }
-    };
-
-    return () => {
-      mounted = false;
-      window.removeEventListener(MESSAGE_READ_EVENT, handleUnreadChange);
-      window.removeEventListener("storage", handleUnreadChange);
-      socket?.close();
-    };
-  }, [isLoggedIn, accessToken, user?.id]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -153,11 +84,6 @@ export default function Header() {
               aria-label="Messages"
             >
               <MessageCircle className="h-5 w-5" />
-              {unreadCount > 0 ? (
-                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none text-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              ) : null}
             </Link>
           ) : null}
 
