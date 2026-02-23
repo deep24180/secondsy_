@@ -262,10 +262,8 @@ export default function MyAdsPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50 py-5 sm:py-8">
-      <div className="pointer-events-none absolute -top-24 left-0 h-64 w-64 rounded-full bg-blue-100/70 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-cyan-100/60 blur-3xl" />
       <div className="relative mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
-        <aside className="hidden w-72 self-start rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-sm lg:sticky lg:top-6 lg:block">
+        <div className="hidden w-72 self-start rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-sm lg:sticky lg:top-6 lg:block">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">
               {(user?.email ?? "G").charAt(0).toUpperCase()}
@@ -277,23 +275,24 @@ export default function MyAdsPage() {
               <p className="text-xs text-slate-500">Seller dashboard</p>
             </div>
           </div>
-          <nav className="mt-5 space-y-1.5">
+          <div className="mt-5 space-y-1.5">
             <div className={getNavClass("My Ads")}>My Ads</div>
             <Link href="/messages" className={getNavClass("Messages")}>
               Messages
             </Link>
 
             <div className={getNavClass("Profile")}>Profile</div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={handleLogout}
               className={getNavClass("Sign Out")}
             >
               Sign Out
-            </button>
-          </nav>
-        </aside>
-        <main className="flex-1 space-y-5">
+            </Button>
+          </div>
+        </div>
+        <div className="flex-1 space-y-5">
           <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -484,7 +483,7 @@ export default function MyAdsPage() {
               <ChevronRight size={18} />
             </Button>
           </div>
-        </main>
+        </div>
       </div>
       <DeleteModal
         isOpen={Boolean(adToDelete)}

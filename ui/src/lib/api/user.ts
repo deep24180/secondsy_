@@ -1,28 +1,22 @@
 export const API_URL = process.env.BASE_URL || "http://localhost:3001";
 
-export const createUser = async (createUsersData: {
-  supabaseId: string;
-  email: string;
-}) => {
-  console.log(createUsersData);
+export const syncCurrentUser = async (accessToken: string) => {
   try {
-    const response = await fetch(`${API_URL}/users`, {
+    const response = await fetch(`${API_URL}/users/me`, {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(createUsersData),
     });
 
     const data = await response.json();
-    console.log(response);
     if (!response.ok) {
       throw new Error(data.message || `HTTP error! status: ${response.status}`);
     }
 
     return data?.data || [];
   } catch (error) {
-    console.error("Error while creating user:", error);
     throw error;
   }
 };

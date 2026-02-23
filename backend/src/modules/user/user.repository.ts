@@ -5,18 +5,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createUser(supabaseId: string, email: string) {
-    return this.prisma.user.create({
-      data: {
-        supabaseId,
-        email,
-      },
-    });
-  }
-
-  findBySupabaseId(supabaseId: string) {
-    return this.prisma.user.findUnique({
+  upsertBySupabaseId(supabaseId: string, email: string) {
+    return this.prisma.user.upsert({
       where: { supabaseId },
+      update: { email },
+      create: { supabaseId, email },
     });
   }
 }

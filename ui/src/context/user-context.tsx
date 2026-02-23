@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import { signOut, supabase } from "../lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { ToastContainer } from "react-toastify";
+import { syncCurrentUser } from "../lib/api/user";
 import "react-toastify/dist/ReactToastify.css";
 
 type UserContextType = {
@@ -20,6 +21,7 @@ export const UserContext = createContext<UserContextType>(
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const provisionedUserIdsRef = useRef<Set<string>>(new Set());
 
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +44,30 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user?.id || !accessToken) return;
+    if (provisionedUserIdsRef.current.has(user.id)) return;
+
+    let isCancelled = false;
+
+    const ensureBackendUser = async () => {
+      try {
+        await syncCurrentUser(accessToken);
+        if (!isCancelled) {
+          provisionedUserIdsRef.current.add(user.id);
+        }
+      } catch (error) {
+        console.error("Failed to sync authenticated user:", error);
+      }
+    };
+
+    void ensureBackendUser();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id, accessToken]);
 
   const logout = async () => {
     setLoading(true);

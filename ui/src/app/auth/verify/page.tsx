@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
-import { createUser } from "../../../lib/api/user";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { toast } from "react-toastify";
@@ -91,21 +90,6 @@ export default function VerifyPage() {
       setLoading(false);
       toast.error(error.message);
       return;
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      try {
-        await createUser({
-          supabaseId: user.id,
-          email: user.email!,
-        });
-      } catch {
-        // ignore user creation errors here; auth is already successful
-      }
     }
 
     setLoading(false);
