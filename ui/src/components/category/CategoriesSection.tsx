@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { categories as fallbackCategories, type Category } from "../../data/categories";
+import {
+  categories as fallbackCategories,
+  type Category,
+} from "../../data/categories";
 import { getCategories } from "../../lib/api/category";
 import CategoryCard from "./CategoryCard";
 

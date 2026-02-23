@@ -69,7 +69,10 @@ export const removeSavedProduct = async (
   return result;
 };
 
-export const isProductSaved = async (productId: string, accessToken: string) => {
+export const isProductSaved = async (
+  productId: string,
+  accessToken: string,
+) => {
   try {
     const savedProducts = await getSavedProducts(accessToken);
     return savedProducts.some((product) => product.id === productId);

@@ -14,7 +14,10 @@ import {
   updateProduct,
 } from "../../lib/api/product";
 import { getCategories } from "../../lib/api/category";
-import { categories as fallbackCategories, type Category } from "../../data/categories";
+import {
+  categories as fallbackCategories,
+  type Category,
+} from "../../data/categories";
 import { useState, ChangeEvent, useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
@@ -466,7 +469,9 @@ export default function SellPage() {
           <section className={sectionCardClass}>
             <div className="flex items-center justify-between">
               <h3 className={sectionTitleClass}>Photos</h3>
-              <p className="text-xs text-slate-500">{formData.images.length}/5</p>
+              <p className="text-xs text-slate-500">
+                {formData.images.length}/5
+              </p>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -478,7 +483,11 @@ export default function SellPage() {
                   placeholder="https://example.com/image.jpg"
                   className={inputClass}
                 />
-                <Button type="button" onClick={handleAddImageUrl} className="h-12">
+                <Button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="h-12"
+                >
                   Add Image Link
                 </Button>
               </div>
@@ -488,7 +497,11 @@ export default function SellPage() {
                   key={index}
                   className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm"
                 >
-                  <img src={img} alt="Preview" className="h-full w-full object-cover" />
+                  <img
+                    src={img}
+                    alt="Preview"
+                    className="h-full w-full object-cover"
+                  />
                   <Button
                     type="button"
                     onClick={() => removeImage(index)}

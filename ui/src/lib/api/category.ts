@@ -1,4 +1,7 @@
-import { categories as fallbackCategories, type Category } from "../../data/categories";
+import {
+  categories as fallbackCategories,
+  type Category,
+} from "../../data/categories";
 import { API_URL } from "./user";
 
 export const getCategories = async (): Promise<Category[]> => {

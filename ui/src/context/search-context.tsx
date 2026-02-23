@@ -24,5 +24,7 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
     [query],
   );
 
-  return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
+  return (
+    <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
+  );
 };

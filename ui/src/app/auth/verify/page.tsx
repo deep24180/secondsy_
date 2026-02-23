@@ -33,7 +33,9 @@ export default function VerifyPage() {
 
       const savedEmail = localStorage.getItem("otp_email");
       if (!savedEmail) {
-        router.replace(`/auth/login?redirect=${encodeURIComponent(redirectPath)}`);
+        router.replace(
+          `/auth/login?redirect=${encodeURIComponent(redirectPath)}`,
+        );
         return;
       }
 
@@ -142,7 +144,7 @@ export default function VerifyPage() {
             </h2>
             <p className="text-slate-500 mt-2">
               Keeping our Secondsy safe for everyone.
-            </p>  
+            </p>
           </div>
         </div>
 

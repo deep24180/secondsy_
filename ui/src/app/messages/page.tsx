@@ -1,6 +1,14 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -55,7 +63,10 @@ const formatMessageDate = (value: string) => {
   });
 };
 
-const getConversationPartnerId = (conversation: Conversation, currentUserId: string) =>
+const getConversationPartnerId = (
+  conversation: Conversation,
+  currentUserId: string,
+) =>
   conversation.participantAId === currentUserId
     ? conversation.participantBId
     : conversation.participantAId;
@@ -81,15 +92,21 @@ export default function MessagesPage() {
   const sellerId = searchParams.get("sellerId") || "";
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, ChatMessage[]>>({});
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
+  const [messagesByConversation, setMessagesByConversation] = useState<
+    Record<string, ChatMessage[]>
+  >({});
   const [loadingPage, setLoadingPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const shouldReconnectRef = useRef(true);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -116,7 +133,10 @@ export default function MessagesPage() {
   }, [conversations, messagesByConversation]);
 
   const selectedConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === selectedConversationId) || null,
+    () =>
+      conversations.find(
+        (conversation) => conversation.id === selectedConversationId,
+      ) || null,
     [conversations, selectedConversationId],
   );
 
@@ -148,8 +168,10 @@ export default function MessagesPage() {
 
         if (convos.length > 0) {
           const sorted = [...convos].sort((a, b) => {
-            const aLast = a.messages?.[0]?.createdAt || a.lastMessageAt || a.createdAt;
-            const bLast = b.messages?.[0]?.createdAt || b.lastMessageAt || b.createdAt;
+            const aLast =
+              a.messages?.[0]?.createdAt || a.lastMessageAt || a.createdAt;
+            const bLast =
+              b.messages?.[0]?.createdAt || b.lastMessageAt || b.createdAt;
             return new Date(bLast).getTime() - new Date(aLast).getTime();
           });
           const firstId = sorted[0].id;
@@ -158,7 +180,9 @@ export default function MessagesPage() {
       } catch (err) {
         if (!mounted) return;
 
-        setError(err instanceof Error ? err.message : "Failed to load messages.");
+        setError(
+          err instanceof Error ? err.message : "Failed to load messages.",
+        );
       } finally {
         if (mounted) setLoadingPage(false);
       }
@@ -182,7 +206,9 @@ export default function MessagesPage() {
 
       socket.onopen = () => {
         setSocketReady(true);
-        setError((current) => (current === "WebSocket disconnected." ? null : current));
+        setError((current) =>
+          current === "WebSocket disconnected." ? null : current,
+        );
       };
 
       socket.onclose = () => {
@@ -308,7 +334,10 @@ export default function MessagesPage() {
   }, [selectedConversationId, socketReady]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   }, [selectedConversationId, selectedMessages.length]);
 
   const sendMessage = async (e: FormEvent) => {
@@ -435,8 +464,12 @@ export default function MessagesPage() {
       <div className="mx-auto max-w-6xl">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Inbox</p>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Messages</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Inbox
+            </p>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              Messages
+            </h1>
           </div>
           <Link
             href="/profile"
@@ -466,13 +499,18 @@ export default function MessagesPage() {
               ) : (
                 sortedConversations.map((conversation) => {
                   const isActive = selectedConversationId === conversation.id;
-                  const partnerId = getConversationPartnerId(conversation, user.id);
+                  const partnerId = getConversationPartnerId(
+                    conversation,
+                    user.id,
+                  );
                   const partnerInitial = partnerId.slice(0, 1).toUpperCase();
                   const lastMessage = getConversationLatestMessage(
                     conversation,
                     messagesByConversation,
                   );
-                  const previewText = getMessagePreview(lastMessage?.content || "");
+                  const previewText = getMessagePreview(
+                    lastMessage?.content || "",
+                  );
                   const previewTime =
                     lastMessage?.createdAt ||
                     conversation.lastMessageAt ||
@@ -538,7 +576,8 @@ export default function MessagesPage() {
                       Conversation
                     </p>
                     <p className="text-sm font-semibold text-slate-900">
-                      User {getConversationPartnerId(selectedConversation, user.id)}
+                      User{" "}
+                      {getConversationPartnerId(selectedConversation, user.id)}
                     </p>
                   </div>
                   <span
@@ -552,7 +591,9 @@ export default function MessagesPage() {
                   </span>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">Select a conversation to start chatting.</p>
+                <p className="text-sm text-slate-500">
+                  Select a conversation to start chatting.
+                </p>
               )}
             </div>
 
@@ -560,7 +601,9 @@ export default function MessagesPage() {
               {!selectedConversationId ? (
                 <p className="text-sm text-slate-500">Select a conversation.</p>
               ) : selectedMessages.length === 0 ? (
-                <p className="text-sm text-slate-500">No messages in this conversation yet.</p>
+                <p className="text-sm text-slate-500">
+                  No messages in this conversation yet.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {selectedMessages.map((message) => {
@@ -595,7 +638,9 @@ export default function MessagesPage() {
                               />
                             </button>
                           ) : (
-                            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                            <p className="whitespace-pre-wrap break-words">
+                              {message.content}
+                            </p>
                           )}
                           <p
                             className={`mt-1 text-[11px] ${

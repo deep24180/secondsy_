@@ -59,7 +59,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   }, [id]);
 
   const images = useMemo(() => product?.images || [], [product]);
-  
+
   useEffect(() => {
     const loadSavedState = async () => {
       if (!id || !accessToken) {
@@ -93,7 +93,9 @@ export default function ProductDetailPage({ params }: PageProps) {
     if (!id) return;
 
     if (!user?.id || !accessToken) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      router.push(
+        `/auth/login?redirect=${encodeURIComponent(`/product/${id}`)}`,
+      );
       return;
     }
 

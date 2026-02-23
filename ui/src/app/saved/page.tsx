@@ -71,7 +71,7 @@ export default function SavedPage() {
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load saved items.",
-        ); 
+        );
       } finally {
         setLoadingSaved(false);
       }

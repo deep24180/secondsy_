@@ -36,7 +36,12 @@ export default function Dashboard() {
           selectedCategory.includes(productCategory)
         : true;
       const searchMatches = normalizedQuery
-        ? [product.title, product.category, product.subcategory, product.location]
+        ? [
+            product.title,
+            product.category,
+            product.subcategory,
+            product.location,
+          ]
             .join(" ")
             .toLowerCase()
             .includes(normalizedQuery)
@@ -83,7 +88,8 @@ export default function Dashboard() {
           setTimeout(() => {
             setVisibleCountByFilter((prev) => ({
               ...prev,
-              [filterKey]: (prev[filterKey] ?? PRODUCTS_PER_PAGE) + PRODUCTS_PER_PAGE,
+              [filterKey]:
+                (prev[filterKey] ?? PRODUCTS_PER_PAGE) + PRODUCTS_PER_PAGE,
             }));
             setIsLoading(false);
           }, 1000);

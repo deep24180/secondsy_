@@ -351,7 +351,7 @@ export default function MyAdsPage() {
               {error}
             </div>
           )}
-          
+
           {!loadingAds && !error && paginatedAds.length === 0 && (
             <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-500 shadow-sm">
               No ads yet. Create your first listing.

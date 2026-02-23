@@ -51,7 +51,10 @@ export default function DeleteModal({
         className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="delete-modal-title" className="text-lg font-bold text-slate-900">
+        <h2
+          id="delete-modal-title"
+          className="text-lg font-bold text-slate-900"
+        >
           {title}
         </h2>
         <p className="mt-2 text-sm text-slate-600">

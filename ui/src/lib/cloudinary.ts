@@ -1,5 +1,6 @@
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const CLOUDINARY_UPLOAD_PRESET =
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 export const IMAGE_MESSAGE_PREFIX = "[image]";
 
@@ -37,10 +38,15 @@ export const uploadImageToCloudinary = async (file: File) => {
     body: formData,
   });
 
-  const data = (await response.json()) as { secure_url?: string; error?: { message?: string } };
+  const data = (await response.json()) as {
+    secure_url?: string;
+    error?: { message?: string };
+  };
 
   if (!response.ok || !data.secure_url) {
-    throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
+    throw new Error(
+      data.error?.message || "Failed to upload image to Cloudinary.",
+    );
   }
 
   return data.secure_url;
