@@ -28,13 +28,13 @@ export class MessagesWsService implements OnModuleDestroy {
   }
 
   attachServer(server: Server) {
-    server.on('upgrade', (request, socket) => {
+    server.on('upgrade', async (request, socket) => {
       if (!request.url?.startsWith('/ws')) {
         socket.destroy();
         return;
       }
 
-      const userId = this.resolveUserId(request);
+      const userId = await this.resolveUserId(request);
 
       if (!userId) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
@@ -43,7 +43,7 @@ export class MessagesWsService implements OnModuleDestroy {
       }
 
       if (!this.completeHandshake(request, socket)) {
-        socket.destroy();
+        socket.destroy(); 
         return;
       }
 
@@ -98,7 +98,7 @@ export class MessagesWsService implements OnModuleDestroy {
     return true;
   }
 
-  private resolveUserId(request: IncomingMessage) {
+  private async resolveUserId(request: IncomingMessage) {
     const url = request.url || '';
     const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
     const params = new URLSearchParams(query);
@@ -108,14 +108,78 @@ export class MessagesWsService implements OnModuleDestroy {
       return null;
     }
 
-    const decoded = jwt.decode(token);
+    const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+    const jwtPublicKey = process.env.SUPABASE_JWT_PUBLIC_KEY?.replace(
+      /\\n/g,
+      '\n',
+    );
+    const signingKey = jwtSecret || jwtPublicKey;
 
-    if (!decoded || typeof decoded !== 'object') {
+    if (signingKey) {
+      return this.verifyWithJwt(token, signingKey, Boolean(jwtSecret));
+    }
+
+    return this.verifyWithSupabaseAuthApi(token);
+  }
+
+  private verifyWithJwt(
+    token: string,
+    signingKey: string,
+    isHmacSecret: boolean,
+  ) {
+    const supabaseUrl =
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    const verifyOptions: jwt.VerifyOptions = {
+      algorithms: isHmacSecret ? ['HS256'] : ['RS256'],
+    };
+
+    if (supabaseUrl) {
+      verifyOptions.issuer = `${supabaseUrl}/auth/v1`;
+    }
+
+    let verified: string | jwt.JwtPayload;
+    try {
+      verified = jwt.verify(token, signingKey, verifyOptions);
+    } catch {
       return null;
     }
 
-    const sub = decoded.sub;
-    return typeof sub === 'string' ? sub : null;
+    if (typeof verified !== 'object' || typeof verified.sub !== 'string') {
+      return null;
+    }
+
+    return verified.sub;
+  }
+
+  private async verifyWithSupabaseAuthApi(token: string) {
+    const supabaseUrl =
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return null;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        method: 'GET',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch {
+      return null;
+    }
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const user = (await response.json()) as { id?: string };
+    return typeof user.id === 'string' ? user.id : null;
   }
 
   private async handleSocketData(client: ConnectedClient, chunk: Buffer) {

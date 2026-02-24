@@ -161,7 +161,7 @@ export default function SavedPage() {
                 <div>
                   <p className="font-semibold">{item.title}</p>
                   <p className="text-xs text-slate-500">
-                    {item.location || "Unknown location"}
+                    {item.location || "Unknown location"} 
                   </p>
                   <p className="text-sm font-bold text-blue-600">
                     {formatPrice(item.price)}

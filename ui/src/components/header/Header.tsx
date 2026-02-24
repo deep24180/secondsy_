@@ -8,18 +8,63 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
 import { SearchContext } from "../../context/search-context";
+import { getConversations } from "../../lib/api/message";
+import {
+  getUnreadConversationsCount,
+  MESSAGE_READ_EVENT,
+} from "../../lib/message-unread";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading } = useContext(UserContext);
+  const { user, loading, accessToken } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
   const { query, setQuery, clearQuery } = useContext(SearchContext);
   const [searchTerm, setSearchTerm] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setSearchTerm(query);
   }, [query]);
+
+  useEffect(() => {
+    if (!user?.id || !accessToken) {
+      setUnreadCount(0);
+      return;
+    }
+
+    let active = true;
+
+    const refreshUnreadCount = async () => {
+      try {
+        const conversations = await getConversations(accessToken);
+        if (!active) return;
+
+        setUnreadCount(getUnreadConversationsCount(conversations, user.id));
+      } catch {
+        if (active) {
+          setUnreadCount(0);
+        }
+      }
+    };
+
+    void refreshUnreadCount();
+
+    const handleReadEvent = () => {
+      void refreshUnreadCount();
+    };
+
+    window.addEventListener(MESSAGE_READ_EVENT, handleReadEvent);
+    const intervalId = window.setInterval(() => {
+      void refreshUnreadCount();
+    }, 30000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener(MESSAGE_READ_EVENT, handleReadEvent);
+    };
+  }, [user?.id, accessToken]);
 
   const handleSellClick = () => {
     if (!isLoggedIn) {
@@ -84,6 +129,11 @@ export default function Header() {
               aria-label="Messages"
             >
               <MessageCircle className="h-5 w-5" />
+              {unreadCount > 0 ? (
+                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold leading-5 text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : null}
             </Link>
           ) : null}
 
