@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 import { Button } from "../../components/ui/button";
 import PageLoader from "../../components/ui/page-loader";
 import { UserContext } from "../../context/user-context";
@@ -32,23 +33,6 @@ import {
 } from "../../lib/cloudinary";
 import { Input } from "../../components/ui/input";
 import ImagePreviewModal from "../../components/modal/ImagePreviewModal";
-
-type WsIncoming = {
-  type: string;
-  payload?: {
-    conversationId?: string;
-    message?: ChatMessage | string;
-  };
-};
-
-const toWsUrl = (baseUrl: string, token: string) => {
-  const normalized = baseUrl.replace(/\/$/, "");
-  const wsBase = normalized.startsWith("https://")
-    ? normalized.replace("https://", "wss://")
-    : normalized.replace("http://", "ws://");
-
-  return `${wsBase}/ws?token=${encodeURIComponent(token)}`;
-};
 
 const formatMessageDate = (value: string) => {
   const parsed = new Date(value);
@@ -103,14 +87,9 @@ export default function MessagesPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const shouldReconnectRef = useRef(true);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  const socketRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const selectedMessages = useMemo(() => {
     if (!selectedConversationId) return [];
@@ -196,91 +175,59 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!accessToken) return;
+    const socket = io(API_URL, {
+      transports: ["websocket"],
+      auth: {
+        token: accessToken,
+      },
+    });
+    socketRef.current = socket;
 
-    shouldReconnectRef.current = true;
+    socket.on("connect", () => {
+      setSocketReady(true);
+      setError((current) =>
+        current === "Socket disconnected." ? null : current,
+      );
+    });
 
-    const connect = () => {
-      const socket = new WebSocket(toWsUrl(API_URL, accessToken));
-      socketRef.current = socket;
+    socket.on("disconnect", () => {
+      setSocketReady(false);
+    });
 
-      socket.onopen = () => {
-        setSocketReady(true);
-        setError((current) =>
-          current === "WebSocket disconnected." ? null : current,
-        );
-      };
+    socket.on("connect_error", () => {
+      setError((current) => current || "Socket disconnected.");
+    });
 
-      socket.onclose = () => {
-        setSocketReady(false);
+    socket.on(
+      "new_message",
+      (incoming: { conversationId?: string; message?: ChatMessage }) => {
+        const conversationId = incoming.conversationId;
+        const message = incoming.message;
 
-        if (!shouldReconnectRef.current) {
+        if (!conversationId || !message) {
           return;
         }
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
-        }, 1500);
-      };
+        setMessagesByConversation((prev) => {
+          const existing = prev[conversationId] || [];
+          const hasMessage = existing.some((item) => item.id === message.id);
 
-      socket.onerror = () => {
-        setError((current) => current || "WebSocket disconnected.");
-      };
+          if (hasMessage) return prev;
 
-      socket.onmessage = (event) => {
-        let incoming: WsIncoming;
+          return {
+            ...prev,
+            [conversationId]: [...existing, message],
+          };
+        });
+      },
+    );
 
-        try {
-          incoming = JSON.parse(event.data) as WsIncoming;
-        } catch {
-          return;
-        }
-
-        if (incoming.type === "new_message") {
-          const conversationId = incoming.payload?.conversationId as string;
-          const message = incoming.payload?.message;
-
-          if (
-            !conversationId ||
-            !message ||
-            typeof message === "string"
-          ) {
-            return;
-          }
-
-          setMessagesByConversation((prev) => {
-            const existing = prev[conversationId] || [];
-            const hasMessage = existing.some((item) => item.id === message.id);
-
-            if (hasMessage) return prev;
-
-            return {
-              ...prev,
-              [conversationId]: [...existing, message],
-            };
-          });
-          return;
-        }
-
-        if (incoming.type === "error") {
-          const message =
-            typeof incoming.payload?.message === "string"
-              ? incoming.payload.message
-              : "WebSocket message error.";
-          setError(message);
-        }
-      };
-    };
-
-    connect();
+    socket.on("message_error", (incoming: { message?: string }) => {
+      setError(incoming.message || "Socket message error.");
+    });
 
     return () => {
-      shouldReconnectRef.current = false;
-
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-
-      socketRef.current?.close();
+      socketRef.current?.disconnect();
       socketRef.current = null;
     };
   }, [accessToken]);
@@ -336,16 +283,11 @@ export default function MessagesPage() {
       return;
     }
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          type: "send_message",
-          payload: {
-            conversationId: selectedConversationId,
-            content,
-          },
-        }),
-      );
+    if (socket?.connected) {
+      socket.emit("send_message", {
+        conversationId: selectedConversationId,
+        content,
+      });
     } else {
       try {
         const response = await sendConversationMessage(
@@ -378,16 +320,11 @@ export default function MessagesPage() {
     const socket = socketRef.current;
     const content = createImageMessageContent(imageUrl);
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          type: "send_message",
-          payload: {
-            conversationId: selectedConversationId,
-            content,
-          },
-        }),
-      );
+    if (socket?.connected) {
+      socket.emit("send_message", {
+        conversationId: selectedConversationId,
+        content,
+      });
       return;
     }
 
