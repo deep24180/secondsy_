@@ -37,8 +37,7 @@ type WsIncoming = {
   type: string;
   payload?: {
     conversationId?: string;
-    messages?: ChatMessage[];
-    message?: ChatMessage;
+    message?: ChatMessage | string;
   };
 };
 
@@ -236,22 +235,17 @@ export default function MessagesPage() {
           return;
         }
 
-        if (incoming.type === "conversation_joined") {
-          const conversationId = incoming.payload?.conversationId as string;
-          const messages = (incoming.payload?.messages || []) as ChatMessage[];
-
-          setMessagesByConversation((prev) => ({
-            ...prev,
-            [conversationId]: messages,
-          }));
-          return;
-        }
-
         if (incoming.type === "new_message") {
           const conversationId = incoming.payload?.conversationId as string;
-          const message = incoming.payload?.message as ChatMessage;
+          const message = incoming.payload?.message;
 
-          if (!conversationId || !message) return;
+          if (
+            !conversationId ||
+            !message ||
+            typeof message === "string"
+          ) {
+            return;
+          }
 
           setMessagesByConversation((prev) => {
             const existing = prev[conversationId] || [];
@@ -264,6 +258,15 @@ export default function MessagesPage() {
               [conversationId]: [...existing, message],
             };
           });
+          return;
+        }
+
+        if (incoming.type === "error") {
+          const message =
+            typeof incoming.payload?.message === "string"
+              ? incoming.payload.message
+              : "WebSocket message error.";
+          setError(message);
         }
       };
     };
@@ -315,23 +318,6 @@ export default function MessagesPage() {
     const seenAt = latestMessage?.createdAt || new Date().toISOString();
     markConversationSeen(user.id, selectedConversationId, seenAt);
   }, [selectedConversationId, user?.id, messagesByConversation]);
-
-  useEffect(() => {
-    if (!selectedConversationId || !socketReady) return;
-
-    const socket = socketRef.current;
-
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return;
-    }
-
-    socket.send(
-      JSON.stringify({
-        type: "join_conversation",
-        payload: { conversationId: selectedConversationId },
-      }),
-    );
-  }, [selectedConversationId, socketReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({

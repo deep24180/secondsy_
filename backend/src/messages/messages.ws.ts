@@ -8,7 +8,6 @@ import { MessagesService } from './messages.service';
 type ConnectedClient = {
   userId: string;
   socket: Duplex;
-  joinedConversationIds: Set<string>;
   buffer: Buffer;
 };
 
@@ -43,14 +42,13 @@ export class MessagesWsService implements OnModuleDestroy {
       }
 
       if (!this.completeHandshake(request, socket)) {
-        socket.destroy(); 
+        socket.destroy();
         return;
       }
 
       const client: ConnectedClient = {
         userId,
         socket,
-        joinedConversationIds: new Set<string>(),
         buffer: Buffer.alloc(0),
       };
 
@@ -186,7 +184,13 @@ export class MessagesWsService implements OnModuleDestroy {
     client.buffer = Buffer.concat([client.buffer, chunk]);
 
     while (client.buffer.length >= 2) {
-      const parsed = this.parseFrame(client.buffer);
+      let parsed: ReturnType<typeof this.parseFrame>;
+      try {
+        parsed = this.parseFrame(client.buffer);
+      } catch {
+        client.socket.end();
+        return;
+      }
 
       if (!parsed) {
         break;
@@ -238,7 +242,7 @@ export class MessagesWsService implements OnModuleDestroy {
     }
 
     if (!masked) {
-      return null;
+      throw new Error('Protocol error: client frames must be masked');
     }
 
     if (buffer.length < offset + 4 + payloadLength) {
@@ -293,8 +297,6 @@ export class MessagesWsService implements OnModuleDestroy {
           conversationId,
           client.userId,
         );
-
-        client.joinedConversationIds.add(conversationId);
 
         this.send(client.socket, {
           type: 'conversation_joined',
