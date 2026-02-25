@@ -1,5 +1,7 @@
 import {
+  Body,
   Controller,
+  Get,
   Post,
   Req,
   UnauthorizedException,
@@ -7,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
 import { UserService } from './user.service';
+import { SyncUserDto } from './dto/sync-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -14,7 +17,7 @@ export class UserController {
 
   @UseGuards(SupabaseAuthGuard)
   @Post('me')
-  syncCurrentUser(@Req() req) {
+  syncCurrentUser(@Req() req, @Body() body: SyncUserDto) {
     const supabaseId = req.user?.sub;
     const email = req.user?.email;
 
@@ -26,6 +29,26 @@ export class UserController {
       throw new UnauthorizedException('Email claim missing from token');
     }
 
-    return this.userService.syncUser(supabaseId, email);
+    const firstName = body.firstName?.trim();
+    const lastName = body.lastName?.trim();
+
+    return this.userService.syncUser(
+      supabaseId,
+      email,
+      firstName || undefined,
+      lastName || undefined,
+    );
+  }
+
+  @UseGuards(SupabaseAuthGuard)
+  @Get('me')
+  getCurrentUser(@Req() req) {
+    const supabaseId = req.user?.sub;
+
+    if (typeof supabaseId !== 'string' || !supabaseId) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    return this.userService.getUserProfile(supabaseId);
   }
 }

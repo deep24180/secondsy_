@@ -19,6 +19,7 @@ import { UserContext } from "../../context/user-context";
 import {
   ChatMessage,
   Conversation,
+  ConversationUser,
   getConversationMessages,
   getConversations,
   sendConversationMessage,
@@ -53,6 +54,28 @@ const getConversationPartnerId = (
   conversation.participantAId === currentUserId
     ? conversation.participantBId
     : conversation.participantAId;
+
+const getConversationPartner = (
+  conversation: Conversation,
+  currentUserId: string,
+) =>
+  conversation.participantAId === currentUserId
+    ? conversation.participantB
+    : conversation.participantA;
+
+const getUserDisplayName = (
+  profile: ConversationUser | null | undefined,
+  fallbackId: string,
+) => {
+  const firstName = profile?.firstName?.trim();
+  const lastName = profile?.lastName?.trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+
+  if (fullName) return fullName;
+  if (profile?.email) return profile.email;
+  if (fallbackId.length <= 8) return fallbackId;
+  return `${fallbackId.slice(0, 6)}...${fallbackId.slice(-4)}`;
+};
 
 const getMessagePreview = (content: string) => {
   if (getImageMessageUrl(content)) return "Sent an image";
@@ -426,7 +449,17 @@ export default function MessagesPage() {
                     conversation,
                     user.id,
                   );
-                  const partnerInitial = partnerId.slice(0, 1).toUpperCase();
+                  const partnerProfile = getConversationPartner(
+                    conversation,
+                    user.id,
+                  );
+                  const partnerName = getUserDisplayName(
+                    partnerProfile,
+                    partnerId,
+                  );
+                  const partnerInitial = partnerName
+                    .slice(0, 1)
+                    .toUpperCase();
                   const lastMessage = getConversationLatestMessage(
                     conversation,
                     messagesByConversation,
@@ -464,7 +497,7 @@ export default function MessagesPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <p className="truncate text-sm font-semibold">
-                              User {partnerId}
+                              {partnerName}
                             </p>
                             <span
                               className={`shrink-0 text-[11px] ${
@@ -499,8 +532,10 @@ export default function MessagesPage() {
                       Conversation
                     </p>
                     <p className="text-sm font-semibold text-slate-900">
-                      User{" "}
-                      {getConversationPartnerId(selectedConversation, user.id)}
+                      {getUserDisplayName(
+                        getConversationPartner(selectedConversation, user.id),
+                        getConversationPartnerId(selectedConversation, user.id),
+                      )}
                     </p>
                   </div>
                   <span

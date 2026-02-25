@@ -82,7 +82,7 @@ export class MessagesService {
     this.assertParticipant(conversation, currentUserId);
 
     return this.messagesRepo.findMessagesByConversation(conversationId);
-  }
+  } 
 
   async sendMessage(conversationId: string, senderId: string, content: string) {
     const conversation =

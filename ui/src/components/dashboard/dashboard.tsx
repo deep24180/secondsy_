@@ -117,7 +117,7 @@ export default function Dashboard() {
                 Marketplace Dashboard
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                Find quality listings in seconds
+                Find quality listings in secondsy
               </h1>
             </div>
             <p className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600">

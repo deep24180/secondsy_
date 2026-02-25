@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+const participantSelect = {
+  supabaseId: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+};
+
 @Injectable()
 export class MessagesRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -12,6 +19,14 @@ export class MessagesRepository {
   findConversationById(id: string) {
     return this.prisma.conversation.findUnique({
       where: { id },
+      include: {
+        participantA: {
+          select: participantSelect,
+        },
+        participantB: {
+          select: participantSelect,
+        },
+      },
     });
   }
 
@@ -28,6 +43,14 @@ export class MessagesRepository {
           participantBId,
         },
       },
+      include: {
+        participantA: {
+          select: participantSelect,
+        },
+        participantB: {
+          select: participantSelect,
+        },
+      },
     });
   }
 
@@ -42,6 +65,14 @@ export class MessagesRepository {
         participantAId,
         participantBId,
       },
+      include: {
+        participantA: {
+          select: participantSelect,
+        },
+        participantB: {
+          select: participantSelect,
+        },
+      },
     });
   }
 
@@ -51,6 +82,12 @@ export class MessagesRepository {
         OR: [{ participantAId: userId }, { participantBId: userId }],
       },
       include: {
+        participantA: {
+          select: participantSelect,
+        },
+        participantB: {
+          select: participantSelect,
+        },
         messages: {
           orderBy: {
             createdAt: 'desc',
@@ -61,6 +98,9 @@ export class MessagesRepository {
             senderId: true,
             content: true,
             createdAt: true,
+            sender: {
+              select: participantSelect,
+            },
           },
         },
       },
@@ -74,6 +114,11 @@ export class MessagesRepository {
     return this.prisma.message.findMany({
       where: {
         conversationId,
+      },
+      include: {
+        sender: {
+          select: participantSelect,
+        },
       },
       orderBy: {
         createdAt: 'asc',
@@ -92,6 +137,11 @@ export class MessagesRepository {
           conversationId,
           senderId,
           content,
+        },
+        include: {
+          sender: {
+            select: participantSelect,
+          },
         },
       }),
       this.prisma.conversation.update({
