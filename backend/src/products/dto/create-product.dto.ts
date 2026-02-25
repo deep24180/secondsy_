@@ -10,6 +10,12 @@ export class CreateProductDto {
   @IsString() title: string;
   @IsString() category: string;
   @IsString() subcategory: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
   @IsNumber() price: number;
   @IsString() condition: string;
   @IsString() description: string;

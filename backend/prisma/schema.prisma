@@ -24,6 +24,7 @@ model Product {
   title            String
   category         String
   subcategory      String
+  tags             String[] @default([])
   price            Float
   condition        String
   description      String

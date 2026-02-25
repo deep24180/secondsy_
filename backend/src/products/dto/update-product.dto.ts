@@ -20,6 +20,11 @@ export class UpdateProductDto {
   subcategory?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @IsOptional()
   @IsNumber()
   price?: number;
 

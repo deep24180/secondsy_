@@ -18,7 +18,13 @@ import {
   categories as fallbackCategories,
   type Category,
 } from "../../data/categories";
-import { useState, ChangeEvent, useContext, useEffect } from "react";
+import {
+  useState,
+  ChangeEvent,
+  KeyboardEvent,
+  useContext,
+  useEffect,
+} from "react";
 import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,6 +38,7 @@ export type SellFormData = {
   title: string;
   category: string;
   subcategory: string;
+  tags: string[];
   price: number | "";
   condition: ConditionType | "";
   description: string;
@@ -55,6 +62,7 @@ export default function SellPage() {
     title: "",
     category: "",
     subcategory: "",
+    tags: [],
     price: "",
     condition: "",
     description: "",
@@ -67,6 +75,7 @@ export default function SellPage() {
   });
 
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [tagInput, setTagInput] = useState("");
   const [loadingEditData, setLoadingEditData] = useState(isEditMode);
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
 
@@ -158,6 +167,7 @@ export default function SellPage() {
           title: product.title ?? "",
           category: product.category ?? "",
           subcategory: product.subcategory ?? "",
+          tags: Array.isArray(product.tags) ? product.tags : [],
           price: Number(product.price) || "",
           condition: (product.condition as ConditionType) ?? "",
           description: product.description ?? "",
@@ -269,6 +279,54 @@ export default function SellPage() {
     }));
   };
 
+  const MAX_TAGS = 5;
+  const MAX_TAG_LENGTH = 20;
+
+  const normalizeTag = (tag: string) => tag.trim().toLowerCase();
+
+  const handleAddTag = () => {
+    const normalized = normalizeTag(tagInput);
+
+    if (!normalized) {
+      return;
+    }
+
+    if (normalized.length > MAX_TAG_LENGTH) {
+      toast.warning(`Tag must be ${MAX_TAG_LENGTH} characters or less.`);
+      return;
+    }
+
+    if (formData.tags.includes(normalized)) {
+      toast.warning("This tag is already added.");
+      return;
+    }
+
+    if (formData.tags.length >= MAX_TAGS) {
+      toast.warning(`You can add up to ${MAX_TAGS} tags.`);
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      tags: [...prev.tags, normalized],
+    }));
+    setTagInput("");
+  };
+
+  const handleTagInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((item) => item !== tag),
+    }));
+  };
+
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
@@ -331,7 +389,7 @@ export default function SellPage() {
     <div className="min-h-screen bg-slate-50">
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+          <h1 className="text-2xl font- semibold tracking-tight text-slate-900 md:text-3xl">
             {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -406,7 +464,7 @@ export default function SellPage() {
                     />
                   </SelectTrigger>
 
-                  <SelectContent>
+                  <SelectContent> 
                     {formData.category &&
                       CATEGORY_MAP[formData.category]?.map((sub) => (
                         <SelectItem key={sub} value={sub}>
@@ -425,6 +483,42 @@ export default function SellPage() {
                   className={inputClass}
                   required
                 />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="Add optional tag (e.g. special, negotiable)"
+                  className={inputClass}
+                />
+                <Button type="button" onClick={handleAddTag} className="h-12">
+                  Add Tag
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {formData.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                  >
+                    #{tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      className="rounded-full px-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                      aria-label={`Remove ${tag}`}
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+                <p className="w-full text-xs text-slate-500">
+                  Optional. Up to {MAX_TAGS} tags, {MAX_TAG_LENGTH} characters
+                  each.
+                </p>
               </div>
             </div>
           </section>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
@@ -11,6 +11,8 @@ import PageLoader from "../ui/page-loader";
 const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,15 +27,90 @@ export default function Dashboard() {
   const selectedCategory = (searchParams.get("category") || "")
     .trim()
     .toLowerCase();
-  const filterKey = `${normalizedQuery}::${selectedCategory}`;
+  const selectedSubcategory = (searchParams.get("subcategory") || "")
+    .trim()
+    .toLowerCase();
+  const selectedTag = (searchParams.get("tag") || "").trim().toLowerCase();
+  const filterKey = `${normalizedQuery}::${selectedCategory}::${selectedSubcategory}::${selectedTag}`;
+
+  const categoryMatches = useCallback(
+    (productCategory: string) =>
+      selectedCategory
+        ? productCategory === selectedCategory ||
+          productCategory.includes(selectedCategory) ||
+          selectedCategory.includes(productCategory)
+        : true,
+    [selectedCategory],
+  );
+
+  const productHasTag = (product: Product, tag: string) =>
+    Array.isArray(product.tags)
+      ? product.tags
+          .map((item) => item.toLowerCase().trim())
+          .includes(tag.toLowerCase())
+      : false;
+
+  const subcategoryMatches = useCallback(
+    (productSubcategory: string) =>
+      selectedSubcategory
+        ? productSubcategory === selectedSubcategory ||
+          productSubcategory.includes(selectedSubcategory) ||
+          selectedSubcategory.includes(productSubcategory)
+        : true,
+    [selectedSubcategory],
+  );
+
+  const availableSubcategories = useMemo(() => {
+    const subcategoriesSet = new Set<string>();
+
+    products.forEach((product) => {
+      const productCategory = product.category.toLowerCase();
+      if (!categoryMatches(productCategory)) {
+        return;
+      }
+
+      const normalizedSubcategory = product.subcategory.trim().toLowerCase();
+      if (normalizedSubcategory) {
+        subcategoriesSet.add(normalizedSubcategory);
+      }
+    });
+
+    return Array.from(subcategoriesSet).sort((a, b) => a.localeCompare(b));
+  }, [products, categoryMatches]);
+
+  const availableTags = useMemo(() => {
+    const tagsSet = new Set<string>();
+
+    products.forEach((product) => {
+      const productCategory = product.category.toLowerCase();
+      if (!categoryMatches(productCategory)) {
+        return;
+      }
+
+      if (!Array.isArray(product.tags)) {
+        return;
+      }
+
+      product.tags.forEach((tag) => {
+        const normalizedTag = tag.trim().toLowerCase();
+        if (normalizedTag) {
+          tagsSet.add(normalizedTag);
+        }
+      });
+    });
+
+    return Array.from(tagsSet).sort((a, b) => a.localeCompare(b));
+  }, [products, categoryMatches]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const productCategory = product.category.toLowerCase();
-      const categoryMatches = selectedCategory
-        ? productCategory === selectedCategory ||
-          productCategory.includes(selectedCategory) ||
-          selectedCategory.includes(productCategory)
+      const matchesCategory = categoryMatches(productCategory);
+      const matchesSubcategory = subcategoryMatches(
+        product.subcategory.toLowerCase(),
+      );
+      const matchesTag = selectedTag
+        ? productHasTag(product, selectedTag)
         : true;
       const searchMatches = normalizedQuery
         ? [
@@ -47,9 +124,15 @@ export default function Dashboard() {
             .includes(normalizedQuery)
         : true;
 
-      return categoryMatches && searchMatches;
+      return matchesCategory && matchesSubcategory && matchesTag && searchMatches;
     });
-  }, [products, normalizedQuery, selectedCategory]);
+  }, [
+    products,
+    normalizedQuery,
+    selectedTag,
+    categoryMatches,
+    subcategoryMatches,
+  ]);
 
   const visibleCount = visibleCountByFilter[filterKey] ?? PRODUCTS_PER_PAGE;
   const visibleProducts = filteredProducts.slice(0, visibleCount);
@@ -103,6 +186,34 @@ export default function Dashboard() {
     return () => observer.disconnect();
   }, [isLoading, visibleCount, filteredProducts.length, filterKey]);
 
+  const updateTagFilter = (tag: string) => {
+    const nextTag = tag.trim().toLowerCase();
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (selectedTag === nextTag) {
+      params.delete("tag");
+    } else {
+      params.set("tag", nextTag);
+    }
+
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+  };
+
+  const updateSubcategoryFilter = (subcategory: string) => {
+    const nextSubcategory = subcategory.trim().toLowerCase();
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (selectedSubcategory === nextSubcategory) {
+      params.delete("subcategory");
+    } else {
+      params.set("subcategory", nextSubcategory);
+    }
+
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+  };
+
   if (isFetchingProducts) {
     return <PageLoader message="Loading listings..." />;
   }
@@ -138,17 +249,70 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {(normalizedQuery || selectedCategory) && (
-            <div className="mb-6 flex flex-wrap items-center gap-2">
-              {normalizedQuery ? (
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                  Search: {query}
-                </span>
+          {(normalizedQuery ||
+            selectedCategory ||
+            selectedSubcategory ||
+            selectedTag) && (
+            <div className="mb-6 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {normalizedQuery ? (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    Search: {query}
+                  </span>
+                ) : null}
+                {selectedCategory ? (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    Category: {searchParams.get("category")}
+                  </span>
+                ) : null}
+                {selectedSubcategory ? (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    Subcategory: {searchParams.get("subcategory")}
+                  </span>
+                ) : null}
+                {selectedTag ? (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+                    Tag: #{selectedTag}
+                  </span>
+                ) : null}
+              </div>
+
+              {selectedCategory && availableSubcategories.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {availableSubcategories.map((subcategory) => (
+                    <button
+                      key={subcategory}
+                      type="button"
+                      onClick={() => updateSubcategoryFilter(subcategory)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        selectedSubcategory === subcategory
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      {subcategory}
+                    </button>
+                  ))}
+                </div>
               ) : null}
-              {selectedCategory ? (
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-                  Category: {searchParams.get("category")}
-                </span>
+
+              {selectedCategory && availableTags.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {availableTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => updateTagFilter(tag)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        selectedTag === tag
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
               ) : null}
             </div>
           )}
