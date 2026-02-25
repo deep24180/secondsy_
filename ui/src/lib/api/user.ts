@@ -1,4 +1,9 @@
-export const API_URL = process.env.BASE_URL || "http://localhost:3001";
+const publicApiBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+export const API_URL = (publicApiBaseUrl || "http://localhost:3001").replace(
+  /\/$/,
+  "",
+);
 
 export type UserProfile = {
   id: string;
