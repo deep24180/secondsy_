@@ -6,8 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Plus,
-  Eye,
-  Heart,
   Trash2,
   Edit3,
   CheckCircle,
@@ -31,8 +29,6 @@ type Ad = {
   title: string;
   price: number;
   status: Status;
-  views: number;
-  likes: number;
   images: string[];
   location: string;
   createdAt: string;
@@ -57,9 +53,8 @@ export default function MyAdsPage() {
   const [activeTab, setActiveTab] = useState<
     "All" | "Active" | "Sold" | "Expired"
   >("All");
-
   const [page, setPage] = useState(1);
-  const PER_PAGE = 2;
+  const PER_PAGE = 3;
 
   const [ads, setAds] = useState<Ad[]>([]);
   const [loadingAds, setLoadingAds] = useState(true);
@@ -94,8 +89,6 @@ export default function MyAdsPage() {
             title: product.title,
             price: Number(product.price) || 0,
             status: (product.status as Status) || "Active",
-            views: 0,
-            likes: 0,
             images: Array.isArray(product.images) ? product.images : [],
             location: product.location || "",
             createdAt: product.createdAt || "",
@@ -115,50 +108,6 @@ export default function MyAdsPage() {
     loadAds();
   }, [user?.id]);
 
-  const card =
-    "rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg";
-
-  const softBtn =
-    "rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-center gap-2";
-
-  const dangerBtn =
-    "h-10 w-10 rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 flex items-center justify-center disabled:opacity-60";
-
-  const getNavClass = (item: string) =>
-    `flex items-center rounded-xl px-4 py-2.5 text-sm transition ${
-      item === "My Ads"
-        ? "bg-blue-600 text-white font-semibold shadow-sm"
-        : "text-slate-600 hover:bg-slate-100"
-    }`;
-
-  const getTabClass = (tab: string) =>
-    `rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
-      activeTab === tab
-        ? "bg-blue-600 text-white shadow-sm"
-        : "text-slate-600 hover:bg-slate-100"
-    }`;
-
-  const getCardClass = (status: Status) =>
-    `${card} p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 ${
-      status === "Sold" ? "opacity-80" : ""
-    }`;
-
-  const getBadgeClass = (status: Status) =>
-    `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-      status === "Sold"
-        ? "bg-slate-200 text-slate-700"
-        : status === "Expired"
-          ? "bg-amber-100 text-amber-700"
-          : "bg-emerald-100 text-emerald-700"
-    }`;
-
-  const getPriceClass = (status: Status) =>
-    `mt-2 text-xl font-extrabold ${
-      status === "Sold" ? "text-slate-400" : "text-blue-700"
-    }`;
-
-  const canShowStats = (status: Status) => status === "Active";
-
   const filteredAds = useMemo(
     () =>
       activeTab === "All" ? ads : ads.filter((ad) => ad.status === activeTab),
@@ -166,7 +115,6 @@ export default function MyAdsPage() {
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredAds.length / PER_PAGE));
-
   const paginatedAds = filteredAds.slice(
     (page - 1) * PER_PAGE,
     page * PER_PAGE,
@@ -245,6 +193,15 @@ export default function MyAdsPage() {
     });
   };
 
+  const getBadgeClass = (status: Status) =>
+    `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+      status === "Sold"
+        ? "bg-slate-200 text-slate-700"
+        : status === "Expired"
+          ? "bg-amber-100 text-amber-700"
+          : "bg-emerald-100 text-emerald-700"
+    }`;
+
   const handleLogout = async () => {
     await logout();
     router.push("/auth/login");
@@ -261,9 +218,9 @@ export default function MyAdsPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50 py-5 sm:py-8">
-      <div className="relative mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
-        <div className="hidden w-72 self-start rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-sm lg:sticky lg:top-6 lg:block">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#ffffff_100%)] py-5 sm:py-8">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
+        <aside className="hidden w-72 self-start rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] lg:sticky lg:top-6 lg:block">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">
               {(user?.email ?? "G").charAt(0).toUpperCase()}
@@ -275,28 +232,36 @@ export default function MyAdsPage() {
               <p className="text-xs text-slate-500">Seller dashboard</p>
             </div>
           </div>
-          <div className="mt-5 space-y-1.5">
-            <div className={getNavClass("My Ads")}>My Ads</div>
-            <Link href="/messages" className={getNavClass("Messages")}>
+          <div className="mt-5 space-y-2">
+            <div className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
+              My Ads
+            </div>
+            <Link
+              href="/messages"
+              className="flex items-center rounded-xl px-4 py-2.5 text-sm text-slate-600 transition hover:bg-slate-100"
+            >
               Messages
             </Link>
 
-            <div className={getNavClass("Profile")}>Profile</div>
             <Button
               type="button"
               variant="ghost"
               onClick={handleLogout}
-              className={getNavClass("Sign Out")}
+              className="flex w-full items-center justify-start rounded-xl px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-100"
             >
               Sign Out
             </Button>
           </div>
-        </div>
+        </aside>
+    
         <div className="flex-1 space-y-5">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm sm:p-6">
+          <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                  Profile Dashboard
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                   My Ads
                 </h1>
                 <p className="mt-1 text-sm text-slate-500 sm:text-base">
@@ -306,14 +271,13 @@ export default function MyAdsPage() {
               <Button
                 onClick={() => router.push("/sell-item")}
                 type="button"
-                variant="default"
                 className="h-11 rounded-xl bg-blue-600 px-6 font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 <Plus size={18} />
                 Post New Ad
               </Button>
             </div>
-            <div className="mt-5 flex items-center gap-2 text-sm text-slate-500">
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
                 {ads.length} total
               </span>
@@ -321,8 +285,9 @@ export default function MyAdsPage() {
                 {ads.filter((ad) => ad.status === "Active").length} active
               </span>
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-sm">
+          </section>
+
+          <section className="rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-sm">
             <div className="flex gap-2 overflow-x-auto">
               {["All", "Active", "Sold", "Expired"].map((tab) => (
                 <Button
@@ -332,13 +297,18 @@ export default function MyAdsPage() {
                   }
                   type="button"
                   variant="ghost"
-                  className={getTabClass(tab)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
+                    activeTab === tab
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
                 >
                   {tab}
                 </Button>
               ))}
             </div>
-          </div>
+          </section>
+
           {loadingAds && (
             <div className="rounded-2xl border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-500 shadow-sm">
               Loading your ads...
@@ -360,103 +330,108 @@ export default function MyAdsPage() {
           {!loadingAds &&
             !error &&
             paginatedAds.map((ad) => (
-              <div key={ad.id} className={getCardClass(ad.status)}>
-                <div className="relative h-44 w-full overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-52">
-                  {ad.images[0] ? (
-                    <Image
-                      src={ad.images[0]}
-                      alt={ad.title}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 640px) 100vw, 208px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-400">
-                      No Image
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col justify-between">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                    <div>
-                      <span className={getBadgeClass(ad.status)}>
-                        {ad.status}
-                      </span>
-                      <h3 className="mt-2 text-lg font-bold text-slate-900">
-                        {ad.title}
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {(ad.location || "Unknown location") + " | "}
-                        {formatDate(ad.createdAt)}
-                      </p>
-                      <p className={getPriceClass(ad.status)}>
-                        {formatPrice(ad.price)}
-                      </p>
-                    </div>
-
-                    {canShowStats(ad.status) && (
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
-                          <Eye size={15} /> {ad.views}
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
-                          <Heart size={15} /> {ad.likes}
-                        </span>
+              <article
+                key={ad.id}
+                className={`rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:p-5 ${
+                  ad.status === "Sold" ? "opacity-80" : ""
+                }`}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
+                  <div className="relative h-44 w-full overflow-hidden rounded-xl bg-slate-100 sm:h-36 sm:w-52">
+                    {ad.images[0] ? (
+                      <Image
+                        src={ad.images[0]}
+                        alt={ad.title}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 100vw, 208px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-400">
+                        No Image
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {ad.status === "Active" && (
-                      <>
-                        <Button
-                          onClick={() =>
-                            router.push(`/sell-item?edit=${ad.id}`)
-                          }
-                          type="button"
-                          variant="ghost"
-                          className={`flex-1 ${softBtn}`}
-                        >
-                          <Edit3 size={16} />
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => markSold(ad.id)}
-                          type="button"
-                          variant="ghost"
-                          className={`flex-1 ${softBtn}`}
-                        >
-                          <CheckCircle size={16} />
-                          Sold
-                        </Button>
-                      </>
-                    )}
 
-                    {ad.status === "Sold" && (
+                  <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                      <div>
+                        <span className={getBadgeClass(ad.status)}>
+                          {ad.status}
+                        </span>
+                        <h3 className="mt-2 text-lg font-bold text-slate-900">
+                          {ad.title}
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {(ad.location || "Unknown location") + " | "}
+                          {formatDate(ad.createdAt)}
+                        </p>
+                        <p
+                          className={`mt-2 text-xl font-extrabold ${
+                            ad.status === "Sold"
+                              ? "text-slate-400"
+                              : "text-blue-700"
+                          }`}
+                        >
+                          {formatPrice(ad.price)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {ad.status === "Active" && (
+                        <>
+                          <Button
+                            onClick={() =>
+                              router.push(`/sell-item?edit=${ad.id}`)
+                            }
+                            type="button"
+                            variant="ghost"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            <Edit3 size={16} />
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => markSold(ad.id)}
+                            type="button"
+                            variant="ghost"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            <CheckCircle size={16} />
+                            Sold
+                          </Button>
+                        </>
+                      )}
+
+                      {ad.status === "Sold" && (
+                        <Button
+                          onClick={() => relist(ad.id)}
+                          type="button"
+                          variant="ghost"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          <RotateCcw size={16} />
+                          Relist
+                        </Button>
+                      )}
+
                       <Button
-                        onClick={() => relist(ad.id)}
+                        onClick={() => requestRemove(ad)}
                         type="button"
                         variant="ghost"
-                        className={`flex-1 ${softBtn}`}
+                        className="h-10 w-10 rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-60"
+                        disabled={deletingAdId === ad.id}
                       >
-                        <RotateCcw size={16} />
-                        Relist
+                        <Trash2 size={16} />
                       </Button>
-                    )}
-
-                    <Button
-                      onClick={() => requestRemove(ad)}
-                      type="button"
-                      variant="ghost"
-                      className={dangerBtn}
-                      disabled={deletingAdId === ad.id}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
+
           <div className="flex flex-wrap justify-center gap-2 pt-2">
             <Button
               title="Previous page"
@@ -471,7 +446,6 @@ export default function MyAdsPage() {
             <span className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-blue-600 px-3 text-sm font-bold text-white shadow-sm">
               {page}
             </span>
-
             <Button
               title="Next page"
               disabled={page === totalPages}
@@ -485,6 +459,7 @@ export default function MyAdsPage() {
           </div>
         </div>
       </div>
+
       <DeleteModal
         isOpen={Boolean(adToDelete)}
         title={

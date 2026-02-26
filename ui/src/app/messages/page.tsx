@@ -110,6 +110,8 @@ export default function MessagesPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [conversationSearch, setConversationSearch] = useState("");
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -140,6 +142,29 @@ export default function MessagesPage() {
       ) || null,
     [conversations, selectedConversationId],
   );
+
+  const filteredConversations = useMemo(() => {
+    const keyword = conversationSearch.trim().toLowerCase();
+    if (!keyword) return sortedConversations;
+
+    return sortedConversations.filter((conversation) => {
+      const partnerId = getConversationPartnerId(conversation, user?.id || "");
+      const partnerProfile = getConversationPartner(
+        conversation,
+        user?.id || "",
+      );
+      const partnerName = getUserDisplayName(partnerProfile, partnerId);
+      const latestMessage = getConversationLatestMessage(
+        conversation,
+        messagesByConversation,
+      );
+
+      return [partnerName, latestMessage?.content || ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(keyword);
+    });
+  }, [conversationSearch, sortedConversations, user?.id, messagesByConversation]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -406,14 +431,14 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#e2e8f0_50%,_#dbeafe_100%)] px-4 py-8 sm:py-10">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#eef2ff_100%)] px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 shadow-[0_14px_40px_-30px_rgba(30,64,175,0.55)] sm:px-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Inbox
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
               Messages
             </h1>
           </div>
@@ -431,19 +456,31 @@ export default function MessagesPage() {
           </div>
         ) : null}
 
-        <section className="grid min-h-[70vh] gap-4 rounded-3xl border border-white/70 bg-white/90 p-3 shadow-xl md:grid-cols-[320px_1fr] md:p-4">
-          <aside className="flex h-[70vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-2 md:p-3">
-            <div className="mb-2 px-2 py-1 text-xs font-medium text-slate-500">
-              Conversations ({sortedConversations.length})
+        <section className="grid min-h-[72vh] gap-4 rounded-3xl border border-slate-200/70 bg-white/90 p-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur md:grid-cols-[320px_1fr] md:p-4">
+          <aside
+            className={`${
+              mobileView === "chat" ? "hidden md:flex" : "flex"
+            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white`}
+          >
+            <div className="border-b border-slate-200 bg-slate-50/80 p-3">
+              <div className="mb-2 text-xs font-medium text-slate-500">
+                Conversations ({filteredConversations.length})
+              </div>
+              <Input
+                value={conversationSearch}
+                onChange={(event) => setConversationSearch(event.target.value)}
+                placeholder="Search conversations"
+                className="h-9 border-slate-300 bg-slate-50"
+              />
             </div>
 
-            <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-              {sortedConversations.length === 0 ? (
+            <div className="flex-1 space-y-2 overflow-y-auto p-2">
+              {filteredConversations.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
                   No conversations yet.
                 </p>
               ) : (
-                sortedConversations.map((conversation) => {
+                filteredConversations.map((conversation) => {
                   const isActive = selectedConversationId === conversation.id;
                   const partnerId = getConversationPartnerId(
                     conversation,
@@ -476,10 +513,13 @@ export default function MessagesPage() {
                     <button
                       key={conversation.id}
                       type="button"
-                      onClick={() => setSelectedConversationId(conversation.id)}
-                      className={`h-20 w-full rounded-xl border px-3 py-3 text-left transition-all ${
+                      onClick={() => {
+                        setSelectedConversationId(conversation.id);
+                        setMobileView("chat");
+                      }}
+                      className={`w-full rounded-xl border px-3 py-3 text-left transition-all ${
                         isActive
-                          ? "border-slate-900 bg-slate-900 text-white shadow-lg"
+                          ? "border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 text-slate-900 shadow-sm"
                           : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                       }`}
                     >
@@ -487,7 +527,7 @@ export default function MessagesPage() {
                         <div
                           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                             isActive
-                              ? "bg-white/20 text-white"
+                              ? "bg-blue-600 text-white shadow-sm"
                               : "bg-slate-100 text-slate-700"
                           }`}
                         >
@@ -501,7 +541,7 @@ export default function MessagesPage() {
                             </p>
                             <span
                               className={`shrink-0 text-[11px] ${
-                                isActive ? "text-slate-300" : "text-slate-400"
+                                isActive ? "text-slate-500" : "text-slate-400"
                               }`}
                             >
                               {formatMessageDate(previewTime)}
@@ -509,7 +549,7 @@ export default function MessagesPage() {
                           </div>
                           <p
                             className={`mt-1 line-clamp-1 text-xs ${
-                              isActive ? "text-slate-200" : "text-slate-500"
+                              isActive ? "text-slate-600" : "text-slate-500"
                             }`}
                           >
                             {previewText}
@@ -523,20 +563,34 @@ export default function MessagesPage() {
             </div>
           </aside>
 
-          <div className="flex h-[70vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <div
+            className={`${
+              mobileView === "list" ? "hidden md:flex" : "flex"
+            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white`}
+          >
+            <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-3">
               {selectedConversation ? (
                 <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                      Conversation
-                    </p>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {getUserDisplayName(
-                        getConversationPartner(selectedConversation, user.id),
-                        getConversationPartnerId(selectedConversation, user.id),
-                      )}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMobileView("list")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-sm text-slate-600 md:hidden"
+                      aria-label="Back to conversations"
+                    >
+                      ←
+                    </button>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                        Conversation
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {getUserDisplayName(
+                          getConversationPartner(selectedConversation, user.id),
+                          getConversationPartnerId(selectedConversation, user.id),
+                        )}
+                      </p>
+                    </div>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -555,7 +609,7 @@ export default function MessagesPage() {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-4">
+            <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4">
               {!selectedConversationId ? (
                 <p className="text-sm text-slate-500">Select a conversation.</p>
               ) : selectedMessages.length === 0 ? (
@@ -576,8 +630,8 @@ export default function MessagesPage() {
                         <div
                           className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm sm:max-w-[75%] ${
                             isMine
-                              ? "rounded-br-md bg-slate-900 text-white"
-                              : "rounded-bl-md bg-white text-slate-800"
+                              ? "rounded-br-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
+                              : "rounded-bl-md border border-slate-200 bg-white text-slate-800"
                           }`}
                         >
                           {imageUrl ? (
@@ -592,7 +646,7 @@ export default function MessagesPage() {
                                 alt="Shared in conversation"
                                 width={720}
                                 height={720}
-                                className="max-h-72 w-auto rounded-xl object-cover"
+                                className="max-h-72 w-auto rounded-xl border border-slate-200 object-cover"
                               />
                             </button>
                           ) : (
@@ -602,7 +656,7 @@ export default function MessagesPage() {
                           )}
                           <p
                             className={`mt-1 text-[11px] ${
-                              isMine ? "text-slate-300" : "text-slate-400"
+                              isMine ? "text-blue-100" : "text-slate-400"
                             }`}
                           >
                             {formatMessageDate(message.createdAt)}
@@ -633,7 +687,7 @@ export default function MessagesPage() {
                   variant="outline"
                   disabled={!selectedConversationId || isUploadingImage}
                   onClick={() => imageInputRef.current?.click()}
-                  className="shrink-0"
+                  className="h-10 shrink-0 border-slate-300 bg-slate-50 hover:bg-slate-100"
                 >
                   {isUploadingImage ? "Uploading..." : "Image"}
                 </Button>
@@ -646,12 +700,12 @@ export default function MessagesPage() {
                       : "Choose a conversation first"
                   }
                   disabled={!selectedConversationId}
-                  className="h-10 flex-1 rounded-full border-slate-300 bg-slate-50 px-4"
+                  className="h-10 flex-1 rounded-full border-slate-300 bg-slate-50 px-4 focus-visible:ring-blue-200"
                 />
                 <Button
                   type="submit"
                   disabled={!selectedConversationId || !newMessage.trim()}
-                  className="shrink-0"
+                  className="h-10 shrink-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-white hover:from-blue-700 hover:to-indigo-700"
                 >
                   Send
                 </Button>

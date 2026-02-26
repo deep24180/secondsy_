@@ -389,24 +389,39 @@ export default function SellPage() {
   const sectionTitleClass =
     "text-lg font-semibold tracking-tight text-slate-900 md:text-xl";
   const sectionCardClass =
-    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6";
+    "rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_16px_35px_-28px_rgba(15,23,42,0.55)] md:p-6";
 
   if (loading || (!isEditMode && (!user?.id || !accessToken))) {
     return <PageLoader message="Checking access..." />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_38%,_#ffffff_100%)]">
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font- semibold tracking-tight text-slate-900 md:text-3xl">
-            {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {isEditMode
-              ? "Update your listing and save changes."
-              : "Add the details below to publish your listing."}
-          </p>
+        <section className="mb-6 rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.55)] backdrop-blur sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Seller Workspace
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+                {isEditMode ? "Edit Advertisement" : "Post New Advertisement"}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                {isEditMode
+                  ? "Update your listing and save changes."
+                  : "Add the details below to publish your listing."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                Form Status
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {isEditMode ? "Editing Item" : "Creating Item"}
+              </p>
+            </div>
+          </div>
           {loadingEditData && (
             <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
               Loading item details...
@@ -503,7 +518,11 @@ export default function SellPage() {
                   placeholder="Add optional tag (e.g. special, negotiable)"
                   className={inputClass}
                 />
-                <Button type="button" onClick={handleAddTag} className="h-12">
+                <Button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="h-12 bg-blue-600 text-white hover:bg-blue-700"
+                >
                   Add Tag
                 </Button>
               </div>
@@ -512,7 +531,7 @@ export default function SellPage() {
                 {formData.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                    className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
                   >
                     #{tag}
                     <button
@@ -549,7 +568,7 @@ export default function SellPage() {
                       className="peer hidden"
                       required
                     />
-                    <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-medium text-slate-700 transition peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                    <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-sm font-medium text-slate-700 transition peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700">
                       {item}
                     </div>
                   </label>
@@ -565,7 +584,7 @@ export default function SellPage() {
               value={formData.description}
               onChange={handleChange}
               placeholder="Describe your item in detail"
-              className="mt-4 min-h-[150px] w-full rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20"
+              className="mt-4 min-h-[160px] w-full rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20"
               required
             />
           </section>
@@ -590,7 +609,7 @@ export default function SellPage() {
                 <Button
                   type="button"
                   onClick={handleAddImageUrl}
-                  className="h-12"
+                  className="h-12 bg-blue-600 text-white hover:bg-blue-700"
                 >
                   Add Image Link
                 </Button>
@@ -643,7 +662,7 @@ export default function SellPage() {
           <section className={sectionCardClass}>
             <h3 className={sectionTitleClass}>Delivery & Location</h3>
             <div className="mt-4 flex flex-wrap gap-3">
-              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700">
+              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
                 <Input
                   type="checkbox"
                   name="deliveryPickup"
@@ -654,7 +673,7 @@ export default function SellPage() {
                 Self Pickup
               </label>
 
-              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700">
+              <label className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
                 <Input
                   type="checkbox"
                   name="deliveryShipping"
@@ -679,7 +698,7 @@ export default function SellPage() {
             <Button
               type="submit"
               disabled={loadingEditData}
-              className="h-12 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700"
+              className="h-12 w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700"
             >
               {isEditMode ? "Save Changes" : "Publish Advertisement"}
             </Button>
