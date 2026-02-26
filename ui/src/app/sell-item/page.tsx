@@ -52,6 +52,22 @@ export type SellFormData = {
 
 type CategoryMap = Record<string, string[]>;
 
+const getInitialFormData = (): SellFormData => ({
+  title: "",
+  category: "",
+  subcategory: "",
+  tags: [],
+  price: "",
+  condition: "",
+  description: "",
+  email: "",
+  phone: "",
+  location: "",
+  deliveryPickup: true,
+  deliveryShipping: false,
+  images: [],
+});
+
 export default function SellPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,21 +76,7 @@ export default function SellPage() {
   const sellPath = isEditMode && editId ? `/sell-item?edit=${editId}` : "/sell-item";
   const loginRedirectPath = `/auth/login?redirect=${encodeURIComponent(sellPath)}`;
 
-  const [formData, setFormData] = useState<SellFormData>({
-    title: "",
-    category: "",
-    subcategory: "",
-    tags: [],
-    price: "",
-    condition: "",
-    description: "",
-    email: "",
-    phone: "",
-    location: "",
-    deliveryPickup: true,
-    deliveryShipping: false,
-    images: [],
-  });
+  const [formData, setFormData] = useState<SellFormData>(getInitialFormData);
 
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [tagInput, setTagInput] = useState("");
@@ -371,6 +373,10 @@ export default function SellPage() {
 
       await createProduct(formData, accessToken);
       toast.success("Advertisement posted successfully.");
+      setFormData(getInitialFormData());
+      setImageUrlInput("");
+      setTagInput("");
+      router.push("/");
     } catch {
       toast.error(
         isEditMode
@@ -694,7 +700,17 @@ export default function SellPage() {
             />
           </section>
 
-          <div className="pt-1">
+          <div className="flex gap-3 pt-1">
+            {isEditMode && (
+              <Button
+                type="button"
+                onClick={() => router.push("/profile")}
+                disabled={loadingEditData}
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Cancel
+              </Button>
+            )}
             <Button
               type="submit"
               disabled={loadingEditData}

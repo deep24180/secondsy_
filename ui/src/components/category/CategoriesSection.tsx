@@ -26,12 +26,17 @@ export default function CategoriesSection() {
 
   const updateCategory = (categoryName: string) => {
     const params = new URLSearchParams(searchParams.toString());
+    const isSameCategory =
+      activeCategory.toLowerCase() === categoryName.toLowerCase();
 
-    if (activeCategory.toLowerCase() === categoryName.toLowerCase()) {
+    if (isSameCategory) {
       params.delete("category");
     } else {
       params.set("category", categoryName);
     }
+    // Category changes should reset dependent filters.
+    params.delete("subcategory");
+    params.delete("tag");
 
     const nextQuery = params.toString();
     router.replace(nextQuery ? `/?${nextQuery}` : "/");
@@ -44,6 +49,12 @@ export default function CategoriesSection() {
       </h2>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <CategoryCard
+          name="All Categories"
+          icon="apps"
+          isActive={!activeCategory}
+          onClick={() => router.replace("/")}
+        />
         {categories.map((cat) => (
           <CategoryCard
             key={cat.id}
