@@ -11,7 +11,8 @@ import {
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
-import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
+import { SupabaseAuthGuard } from '../auth/supabase.guard';
+import type { AuthenticatedRequest } from '../auth/auth-request.interface';
 import { UpdateProductStatusDto } from './dto/update-product-status.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -20,7 +21,7 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
   @UseGuards(SupabaseAuthGuard)
   @Post()
-  create(@Body() dto: CreateProductDto, @Req() req) {
+  create(@Body() dto: CreateProductDto, @Req() req: AuthenticatedRequest) {
     const supabaseId = req.user.sub;
     return this.productsService.create(dto, supabaseId);
   }
@@ -40,7 +41,7 @@ export class ProductsController {
   updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateProductStatusDto,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     const supabaseId = req.user.sub;
     return this.productsService.updateStatus(id, supabaseId, dto.status);
@@ -48,14 +49,18 @@ export class ProductsController {
 
   @UseGuards(SupabaseAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateProductDto, @Req() req) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const supabaseId = req.user.sub;
     return this.productsService.update(id, supabaseId, dto);
   }
 
   @UseGuards(SupabaseAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req) {
+  remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const supabaseId = req.user.sub;
     return this.productsService.remove(id, supabaseId);
   }

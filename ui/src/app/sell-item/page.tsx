@@ -57,6 +57,8 @@ export default function SellPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = Boolean(editId);
+  const sellPath = isEditMode && editId ? `/sell-item?edit=${editId}` : "/sell-item";
+  const loginRedirectPath = `/auth/login?redirect=${encodeURIComponent(sellPath)}`;
 
   const [formData, setFormData] = useState<SellFormData>({
     title: "",
@@ -141,7 +143,7 @@ export default function SellPage() {
 
       if (!user?.id || !accessToken) {
         toast.error("You must be logged in to edit an item.");
-        router.push("/auth/login");
+        router.push(loginRedirectPath);
         return;
       }
 
@@ -195,14 +197,22 @@ export default function SellPage() {
     return () => {
       isMounted = false;
     };
-  }, [isEditMode, editId, loading, user?.id, accessToken, router]);
+  }, [
+    isEditMode,
+    editId,
+    loading,
+    user?.id,
+    accessToken,
+    router,
+    loginRedirectPath,
+  ]);
 
   useEffect(() => {
     if (!isEditMode && !loading && (!user?.id || !accessToken)) {
       toast.error("You must be logged in to post an item.");
-      router.replace("/auth/login");
+      router.replace(loginRedirectPath);
     }
-  }, [isEditMode, loading, user?.id, accessToken, router]);
+  }, [isEditMode, loading, user?.id, accessToken, router, loginRedirectPath]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -332,7 +342,7 @@ export default function SellPage() {
 
     if (!accessToken) {
       toast.error("You must be logged in to post an item.");
-      router.replace("/auth/login");
+      router.replace(loginRedirectPath);
       return;
     }
 

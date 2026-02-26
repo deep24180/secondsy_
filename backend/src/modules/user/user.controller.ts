@@ -7,7 +7,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
+import { SupabaseAuthGuard } from '../../auth/supabase.guard';
+import type { AuthenticatedRequest } from '../../auth/auth-request.interface';
 import { UserService } from './user.service';
 import { SyncUserDto } from './dto/sync-user.dto';
 
@@ -17,7 +18,7 @@ export class UserController {
 
   @UseGuards(SupabaseAuthGuard)
   @Post('me')
-  syncCurrentUser(@Req() req, @Body() body: SyncUserDto) {
+  syncCurrentUser(@Req() req: AuthenticatedRequest, @Body() body: SyncUserDto) {
     const supabaseId = req.user?.sub;
     const email = req.user?.email;
 
@@ -42,7 +43,7 @@ export class UserController {
 
   @UseGuards(SupabaseAuthGuard)
   @Get('me')
-  getCurrentUser(@Req() req) {
+  getCurrentUser(@Req() req: AuthenticatedRequest) {
     const supabaseId = req.user?.sub;
 
     if (typeof supabaseId !== 'string' || !supabaseId) {

@@ -7,7 +7,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { SupabaseAuthGuard } from 'src/auth/supabase.guard';
+import { SupabaseAuthGuard } from '../auth/supabase.guard';
+import type { AuthenticatedRequest } from '../auth/auth-request.interface';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessagesService } from './messages.service';
@@ -18,7 +19,10 @@ export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Post('conversations/start')
-  startConversation(@Body() dto: CreateConversationDto, @Req() req) {
+  startConversation(
+    @Body() dto: CreateConversationDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const currentUserId = req.user.sub;
     return this.messagesService.getOrCreateConversation(
       dto.productId,
@@ -28,13 +32,13 @@ export class MessagesController {
   }
 
   @Get('conversations')
-  listConversations(@Req() req) {
+  listConversations(@Req() req: AuthenticatedRequest) {
     const currentUserId = req.user.sub;
     return this.messagesService.listConversations(currentUserId);
   }
 
   @Get('conversations/:id/messages')
-  listMessages(@Param('id') id: string, @Req() req) {
+  listMessages(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const currentUserId = req.user.sub;
     return this.messagesService.listMessages(id, currentUserId);
   }
@@ -43,7 +47,7 @@ export class MessagesController {
   sendMessage(
     @Param('id') id: string,
     @Body() dto: CreateMessageDto,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     const currentUserId = req.user.sub;
     return this.messagesService.sendMessage(id, currentUserId, dto.content);

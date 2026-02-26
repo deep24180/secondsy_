@@ -1,16 +1,28 @@
-import jwt from 'jsonwebtoken';
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import jwt from 'jsonwebtoken';
+import type { AuthenticatedUser } from './auth-request.interface';
+
+type JwtVerifyOptions = {
+  algorithms: string[];
+  issuer?: string;
+};
+
+type JwtVerifyFn = (
+  token: string,
+  signingKey: string,
+  options: JwtVerifyOptions,
+) => unknown;
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const rawRequest = context.switchToHttp().getRequest<unknown>();
+    const authHeader = this.getAuthorizationHeader(rawRequest);
 
     if (!authHeader) {
       throw new UnauthorizedException('Authorization header missing');
@@ -25,12 +37,13 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing bearer token');
     }
 
-    request.user = await this.resolveVerifiedUser(token);
+    const requestWithUser = rawRequest as { user?: AuthenticatedUser };
+    requestWithUser.user = await this.resolveVerifiedUser(token);
 
     return true;
   }
 
-  private async resolveVerifiedUser(token: string) {
+  private async resolveVerifiedUser(token: string): Promise<AuthenticatedUser> {
     const jwtSecret = process.env.SUPABASE_JWT_SECRET;
     const jwtPublicKey = process.env.SUPABASE_JWT_PUBLIC_KEY?.replace(
       /\\n/g,
@@ -49,11 +62,11 @@ export class SupabaseAuthGuard implements CanActivate {
     token: string,
     signingKey: string,
     isHmacSecret: boolean,
-  ) {
+  ): AuthenticatedUser {
     const supabaseUrl =
       process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    const verifyOptions: jwt.VerifyOptions = {
+    const verifyOptions: JwtVerifyOptions = {
       algorithms: isHmacSecret ? ['HS256'] : ['RS256'],
     };
 
@@ -61,21 +74,24 @@ export class SupabaseAuthGuard implements CanActivate {
       verifyOptions.issuer = `${supabaseUrl}/auth/v1`;
     }
 
-    let verified: string | jwt.JwtPayload;
+    const jwtVerify = (jwt as unknown as { verify: JwtVerifyFn }).verify;
+    let verified: unknown;
     try {
-      verified = jwt.verify(token, signingKey, verifyOptions);
+      verified = jwtVerify(token, signingKey, verifyOptions);
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    if (typeof verified !== 'object' || typeof verified.sub !== 'string') {
+    if (!this.isAuthenticatedUser(verified)) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
     return verified;
   }
 
-  private async verifyWithSupabaseAuthApi(token: string) {
+  private async verifyWithSupabaseAuthApi(
+    token: string,
+  ): Promise<AuthenticatedUser> {
     const supabaseUrl =
       process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -103,19 +119,44 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const user = (await response.json()) as {
-      id?: string;
-      email?: string;
-      [key: string]: unknown;
-    };
-
-    if (!user?.id) {
+    const rawUser = (await response.json()) as unknown;
+    if (!this.isRecord(rawUser) || typeof rawUser.id !== 'string') {
       throw new UnauthorizedException('Invalid token payload');
     }
 
     return {
-      ...user,
-      sub: user.id,
+      ...rawUser,
+      sub: rawUser.id,
     };
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
+
+  private getAuthorizationHeader(request: unknown): string | null {
+    if (!this.isRecord(request)) {
+      return null;
+    }
+
+    const headers = request.headers;
+    if (!this.isRecord(headers)) {
+      return null;
+    }
+
+    const authorization = headers.authorization;
+    if (typeof authorization === 'string') {
+      return authorization;
+    }
+
+    if (Array.isArray(authorization) && typeof authorization[0] === 'string') {
+      return authorization[0];
+    }
+
+    return null;
+  }
+
+  private isAuthenticatedUser(value: unknown): value is AuthenticatedUser {
+    return this.isRecord(value) && typeof value.sub === 'string';
   }
 }

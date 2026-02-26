@@ -12,6 +12,11 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { MessagesService } from './messages.service';
 
+const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
+
 type JoinConversationPayload = {
   conversationId?: string;
 };
@@ -21,9 +26,20 @@ type SendMessagePayload = {
   content?: string;
 };
 
+type JwtVerifyOptions = {
+  algorithms: string[];
+  issuer?: string;
+};
+
+type JwtVerifyFn = (
+  token: string,
+  signingKey: string,
+  options: JwtVerifyOptions,
+) => unknown;
+
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
   },
 })
@@ -35,11 +51,12 @@ export class MessagesWsService
   private server: Server;
 
   private readonly logger = new Logger(MessagesWsService.name);
+  private readonly authenticatedClients = new WeakMap<Socket, string>();
 
   constructor(private readonly messagesService: MessagesService) {}
 
   onModuleDestroy() {
-    this.server?.close();
+    void this.server?.close();
   }
 
   async handleConnection(client: Socket) {
@@ -51,16 +68,17 @@ export class MessagesWsService
       return;
     }
 
-    client.data.userId = userId;
-    client.join(this.getUserRoom(userId));
+    this.authenticatedClients.set(client, userId);
+    void client.join(this.getUserRoom(userId));
     client.emit('connected', { userId });
   }
 
   handleDisconnect(client: Socket) {
-    const userId = client.data.userId;
+    const userId = this.authenticatedClients.get(client);
     if (!userId) return;
 
-    client.leave(this.getUserRoom(userId));
+    this.authenticatedClients.delete(client);
+    void client.leave(this.getUserRoom(userId));
   }
 
   @SubscribeMessage('join_conversation')
@@ -68,7 +86,7 @@ export class MessagesWsService
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinConversationPayload,
   ) {
-    const userId = client.data.userId as string | undefined;
+    const userId = this.authenticatedClients.get(client);
 
     if (!userId) {
       client.emit('message_error', { message: 'Unauthorized' });
@@ -101,7 +119,7 @@ export class MessagesWsService
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: SendMessagePayload,
   ) {
-    const userId = client.data.userId as string | undefined;
+    const userId = this.authenticatedClients.get(client);
 
     if (!userId) {
       client.emit('message_error', { message: 'Unauthorized' });
@@ -149,7 +167,11 @@ export class MessagesWsService
   }
 
   private async resolveUserId(client: Socket) {
-    const rawToken = client.handshake.auth?.token ?? client.handshake.query.token;
+    const handshake = client.handshake as {
+      auth?: { token?: unknown };
+      query?: { token?: unknown };
+    };
+    const rawToken = handshake.auth?.token ?? handshake.query?.token;
     const token = typeof rawToken === 'string' ? rawToken : null;
 
     if (!token) {
@@ -174,11 +196,11 @@ export class MessagesWsService
     token: string,
     signingKey: string,
     isHmacSecret: boolean,
-  ) {
+  ): string | null {
     const supabaseUrl =
       process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    const verifyOptions: jwt.VerifyOptions = {
+    const verifyOptions: JwtVerifyOptions = {
       algorithms: isHmacSecret ? ['HS256'] : ['RS256'],
     };
 
@@ -186,18 +208,23 @@ export class MessagesWsService
       verifyOptions.issuer = `${supabaseUrl}/auth/v1`;
     }
 
-    let verified: string | jwt.JwtPayload;
+    const jwtVerify = (jwt as unknown as { verify: JwtVerifyFn }).verify;
+    let verified: unknown;
     try {
-      verified = jwt.verify(token, signingKey, verifyOptions);
+      verified = jwtVerify(token, signingKey, verifyOptions);
     } catch {
       return null;
     }
 
-    if (typeof verified !== 'object' || typeof verified.sub !== 'string') {
+    if (
+      typeof verified !== 'object' ||
+      verified === null ||
+      typeof (verified as { sub?: unknown }).sub !== 'string'
+    ) {
       return null;
     }
 
-    return verified.sub;
+    return (verified as { sub: string }).sub;
   }
 
   private async verifyWithSupabaseAuthApi(token: string) {
@@ -226,7 +253,15 @@ export class MessagesWsService
       return null;
     }
 
-    const user = (await response.json()) as { id?: string };
-    return typeof user.id === 'string' ? user.id : null;
+    const rawUser = (await response.json()) as unknown;
+    if (
+      typeof rawUser !== 'object' ||
+      rawUser === null ||
+      typeof (rawUser as { id?: unknown }).id !== 'string'
+    ) {
+      return null;
+    }
+
+    return (rawUser as { id: string }).id;
   }
 }
