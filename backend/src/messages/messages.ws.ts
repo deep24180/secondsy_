@@ -11,11 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { MessagesService } from './messages.service';
-
-const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter((origin) => origin.length > 0);
+import { corsOriginResolver } from '../lib/cors';
 
 type JoinConversationPayload = {
   conversationId?: string;
@@ -39,7 +35,7 @@ type JwtVerifyFn = (
 
 @WebSocketGateway({
   cors: {
-    origin: corsOrigins,
+    origin: corsOriginResolver,
     credentials: true,
   },
 })
