@@ -13,6 +13,7 @@ import {
   getProductById,
   updateProduct,
 } from "../../lib/api/product";
+import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import { getCategories } from "../../lib/api/category";
 import {
   categories as fallbackCategories,
@@ -24,6 +25,7 @@ import {
   KeyboardEvent,
   useContext,
   useEffect,
+  useRef,
 } from "react";
 import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
@@ -79,9 +81,11 @@ export default function SellPage() {
   const [formData, setFormData] = useState<SellFormData>(getInitialFormData);
 
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [uploadingLocalImage, setUploadingLocalImage] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [loadingEditData, setLoadingEditData] = useState(isEditMode);
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+  const localImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const { accessToken, user, loading } = useContext(UserContext);
 
@@ -282,6 +286,52 @@ export default function SellPage() {
       images: [...prev.images, trimmed],
     }));
     setImageUrlInput("");
+  };
+
+  const handleLocalImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file.");
+      return;
+    }
+
+    if (formData.images.length >= 5) {
+      toast.warning("You can add up to 5 image links.");
+      return;
+    }
+
+    setUploadingLocalImage(true);
+
+    try {
+      const uploadedUrl = await uploadImageToCloudinary(file);
+      if (formData.images.includes(uploadedUrl)) {
+        toast.warning("This image is already added.");
+        return;
+      }
+
+      if (formData.images.length >= 5) {
+        toast.warning("You can add up to 5 image links.");
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, uploadedUrl],
+      }));
+      toast.success("Image uploaded successfully.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to upload image.",
+      );
+    } finally {
+      setUploadingLocalImage(false);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -615,10 +665,35 @@ export default function SellPage() {
                 <Button
                   type="button"
                   onClick={handleAddImageUrl}
+                  disabled={formData.images.length >= 5}
                   className="h-12 bg-blue-600 text-white hover:bg-blue-700"
                 >
                   Add Image Link
                 </Button>
+              </div>
+
+              <div className="col-span-2 space-y-1 md:col-span-5">
+                <Input
+                  ref={localImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLocalImageUpload}
+                  disabled={uploadingLocalImage || formData.images.length >= 5}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  onClick={() => localImageInputRef.current?.click()}
+                  disabled={uploadingLocalImage || formData.images.length >= 5}
+                  className="h-9 rounded-lg bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                >
+                  Choose File
+                </Button>
+                <p className="text-xs text-slate-500">
+                  {uploadingLocalImage
+                    ? "Uploading image..."
+                    : "Choose an image from your device."}
+                </p>
               </div>
 
               {formData.images.map((img, index) => (
@@ -655,7 +730,7 @@ export default function SellPage() {
                 placeholder="Email"
                 className={inputClass}
               />
-              <input
+              <Input
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
