@@ -111,7 +111,7 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">
-            Sign in to Secondcy
+            Sign in to Secondsy
           </h1>
           <p className="text-slate-500 mt-1">
             Enter your details below to access your account

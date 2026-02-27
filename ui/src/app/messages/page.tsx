@@ -143,6 +143,33 @@ export default function MessagesPage() {
     [conversations, selectedConversationId],
   );
 
+  const selectedConversationSeenAt = useMemo(() => {
+    if (!selectedConversationId) return null;
+
+    const selectedConversationMessages =
+      messagesByConversation[selectedConversationId] || [];
+    const latestLoadedMessage =
+      selectedConversationMessages[selectedConversationMessages.length - 1];
+
+    if (latestLoadedMessage?.createdAt) {
+      return latestLoadedMessage.createdAt;
+    }
+
+    if (selectedConversation?.messages?.[0]?.createdAt) {
+      return selectedConversation.messages[0].createdAt;
+    }
+
+    if (selectedConversation?.lastMessageAt) {
+      return selectedConversation.lastMessageAt;
+    }
+
+    return new Date().toISOString();
+  }, [
+    selectedConversationId,
+    selectedConversation,
+    messagesByConversation,
+  ]);
+
   const filteredConversations = useMemo(() => {
     const keyword = conversationSearch.trim().toLowerCase();
     if (!keyword) return sortedConversations;
@@ -303,16 +330,12 @@ export default function MessagesPage() {
   }, [selectedConversationId, accessToken]);
 
   useEffect(() => {
-    if (!selectedConversationId || !user?.id) return;
+    if (!selectedConversationId || !user?.id || !selectedConversationSeenAt) {
+      return;
+    }
 
-    const selectedConversationMessages =
-      messagesByConversation[selectedConversationId] || [];
-    const latestMessage =
-      selectedConversationMessages[selectedConversationMessages.length - 1];
-
-    const seenAt = latestMessage?.createdAt || new Date().toISOString();
-    markConversationSeen(user.id, selectedConversationId, seenAt);
-  }, [selectedConversationId, user?.id, messagesByConversation]);
+    markConversationSeen(user.id, selectedConversationId, selectedConversationSeenAt);
+  }, [selectedConversationId, selectedConversationSeenAt, user?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
