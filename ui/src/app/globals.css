@@ -115,6 +115,11 @@
   }
 }
 
+body.auth-screen > header,
+body.auth-screen > footer {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border;

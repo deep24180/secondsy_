@@ -24,6 +24,8 @@ export default function LoginPage() {
   const redirectPath = getSafeRedirectPath(requestedRedirect);
 
   useEffect(() => {
+    document.body.classList.add("auth-screen");
+
     const checkSession = async () => {
       const {
         data: { session },
@@ -38,6 +40,10 @@ export default function LoginPage() {
     };
 
     checkSession();
+
+    return () => {
+      document.body.classList.remove("auth-screen");
+    };
   }, [router, redirectPath]);
 
   if (initializing) {

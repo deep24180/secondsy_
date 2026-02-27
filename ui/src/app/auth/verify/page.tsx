@@ -23,6 +23,8 @@ export default function VerifyPage() {
   })();
 
   useEffect(() => {
+    document.body.classList.add("auth-screen");
+
     const initVerification = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
@@ -43,6 +45,10 @@ export default function VerifyPage() {
     };
 
     initVerification();
+
+    return () => {
+      document.body.classList.remove("auth-screen");
+    };
   }, [router, redirectPath]);
 
   useEffect(() => {
