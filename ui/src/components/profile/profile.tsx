@@ -220,7 +220,7 @@ export default function MyAdsPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#ffffff_100%)] py-5 sm:py-8">
       <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
-        <aside className="hidden w-72 self-start rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] lg:sticky lg:top-6 lg:block">
+        <aside className="w-full self-start rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] lg:w-72 lg:sticky lg:top-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">
               {(user?.email ?? "G").charAt(0).toUpperCase()}
@@ -253,7 +253,7 @@ export default function MyAdsPage() {
             </Button>
           </div>
         </aside>
-    
+
         <div className="flex-1 space-y-5">
           <section className="rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
