@@ -454,22 +454,22 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#eef2ff_100%)] px-4 py-6 sm:py-8">
+    <main className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)] px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-4 shadow-[0_14px_40px_-30px_rgba(30,64,175,0.55)] sm:px-6">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/70 bg-[linear-gradient(130deg,_#0f172a_0%,_#1e293b_42%,_#1d4ed8_100%)] px-4 py-4 text-white shadow-[0_24px_55px_-35px_rgba(15,23,42,0.7)] sm:px-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">
               Inbox
             </p>
-            <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl">
               Messages
             </h1>
           </div>
           <Link
-            href="/profile"
-            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
+            href="/"
+            className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 backdrop-blur transition hover:bg-white/20"
           >
-            Back to profile
+            Go back
           </Link>
         </header>
 
@@ -483,23 +483,23 @@ export default function MessagesPage() {
           <aside
             className={`${
               mobileView === "chat" ? "hidden md:flex" : "flex"
-            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white`}
+            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)]`}
           >
-            <div className="border-b border-slate-200 bg-slate-50/80 p-3">
-              <div className="mb-2 text-xs font-medium text-slate-500">
+            <div className="border-b border-slate-200 bg-blue-50/60 p-3">
+              <div className="mb-2 text-xs font-medium text-blue-700">
                 Conversations ({filteredConversations.length})
               </div>
               <Input
                 value={conversationSearch}
                 onChange={(event) => setConversationSearch(event.target.value)}
                 placeholder="Search conversations"
-                className="h-9 border-slate-300 bg-slate-50"
+                className="h-9 border-blue-200 bg-white"
               />
             </div>
 
             <div className="flex-1 space-y-2 overflow-y-auto p-2">
               {filteredConversations.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-4 py-8 text-center text-sm text-blue-700">
                   No conversations yet.
                 </p>
               ) : (
@@ -542,8 +542,8 @@ export default function MessagesPage() {
                       }}
                       className={`w-full rounded-xl border px-3 py-3 text-left transition-all ${
                         isActive
-                          ? "border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 text-slate-900 shadow-sm"
-                          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                          ? "border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100/80 text-slate-900 shadow-sm"
+                          : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -551,7 +551,7 @@ export default function MessagesPage() {
                           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                             isActive
                               ? "bg-blue-600 text-white shadow-sm"
-                              : "bg-slate-100 text-slate-700"
+                              : "bg-blue-50 text-blue-700"
                           }`}
                         >
                           {partnerInitial}
@@ -589,22 +589,22 @@ export default function MessagesPage() {
           <div
             className={`${
               mobileView === "list" ? "hidden md:flex" : "flex"
-            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white`}
+            } h-[72vh] min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fbff_100%)]`}
           >
-            <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-3">
+            <div className="border-b border-slate-200 bg-blue-50/60 px-4 py-3">
               {selectedConversation ? (
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setMobileView("list")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-sm text-slate-600 md:hidden"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-white text-sm text-blue-700 md:hidden"
                       aria-label="Back to conversations"
                     >
                       ←
                     </button>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-blue-700">
                         Conversation
                       </p>
                       <p className="text-sm font-semibold text-slate-900">
@@ -618,7 +618,7 @@ export default function MessagesPage() {
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                       socketReady
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-blue-100 text-blue-700"
                         : "bg-amber-100 text-amber-700"
                     }`}
                   >
@@ -632,7 +632,7 @@ export default function MessagesPage() {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4">
+            <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fbff_0%,#eef2ff_100%)] p-4">
               {!selectedConversationId ? (
                 <p className="text-sm text-slate-500">Select a conversation.</p>
               ) : selectedMessages.length === 0 ? (
@@ -653,7 +653,7 @@ export default function MessagesPage() {
                         <div
                           className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm sm:max-w-[75%] ${
                             isMine
-                              ? "rounded-br-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
+                              ? "rounded-br-md bg-gradient-to-br from-blue-600 to-blue-700 text-white"
                               : "rounded-bl-md border border-slate-200 bg-white text-slate-800"
                           }`}
                         >
@@ -695,7 +695,7 @@ export default function MessagesPage() {
 
             <form
               onSubmit={sendMessage}
-              className="border-t border-slate-200 bg-white p-3 sm:p-4"
+              className="border-t border-slate-200 bg-white/95 p-3 sm:p-4"
             >
               <div className="flex items-center gap-2">
                 <Input
@@ -710,7 +710,7 @@ export default function MessagesPage() {
                   variant="outline"
                   disabled={!selectedConversationId || isUploadingImage}
                   onClick={() => imageInputRef.current?.click()}
-                  className="h-10 shrink-0 border-slate-300 bg-slate-50 hover:bg-slate-100"
+                  className="h-10 shrink-0 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                 >
                   {isUploadingImage ? "Uploading..." : "Image"}
                 </Button>
@@ -723,12 +723,12 @@ export default function MessagesPage() {
                       : "Choose a conversation first"
                   }
                   disabled={!selectedConversationId}
-                  className="h-10 flex-1 rounded-full border-slate-300 bg-slate-50 px-4 focus-visible:ring-blue-200"
+                  className="h-10 flex-1 rounded-full border-blue-200 bg-white px-4 focus-visible:ring-blue-200"
                 />
                 <Button
                   type="submit"
                   disabled={!selectedConversationId || !newMessage.trim()}
-                  className="h-10 shrink-0 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-white hover:from-blue-700 hover:to-indigo-700"
+                  className="h-10 shrink-0 rounded-full bg-blue-600 px-5 text-white hover:bg-blue-700"
                 >
                   Send
                 </Button>

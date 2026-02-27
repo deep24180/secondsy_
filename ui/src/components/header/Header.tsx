@@ -3,8 +3,7 @@
 import { FormEvent, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bookmark, MessageCircle } from "lucide-react";
-import { Button } from "../ui/button";
+import { MessageCircle, Search, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
 import { SearchContext } from "../../context/search-context";
@@ -17,10 +16,11 @@ import {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, accessToken } = useContext(UserContext);
+  const { user, accessToken } = useContext(UserContext);
   const isLoggedIn = Boolean(user);
   const { query, setQuery, clearQuery } = useContext(SearchContext);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -66,16 +66,6 @@ export default function Header() {
     };
   }, [user?.id, accessToken]);
 
-  const handleSellClick = () => {
-    if (!isLoggedIn) {
-      const redirect = pathname || "/sell-item";
-      router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
-      return;
-    }
-
-    router.push("/sell-item");
-  };
-
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -86,6 +76,7 @@ export default function Header() {
       if (pathname !== "/") {
         router.push("/");
       }
+      setIsMobileSearchOpen(false);
       return;
     }
 
@@ -93,6 +84,7 @@ export default function Header() {
     if (pathname !== "/") {
       router.push("/");
     }
+    setIsMobileSearchOpen(false);
   };
 
   const handleSearchChange = (value: string) => {
@@ -100,34 +92,49 @@ export default function Header() {
     setQuery(value.trim());
   };
 
+  const iconButtonClass =
+    "relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 md:h-10 md:w-10";
+
   return (
-    <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-primary">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/80 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:gap-4">
+        <Link
+          href="/"
+          className="shrink-0 whitespace-nowrap text-[1.3rem] font-extrabold tracking-tight text-slate-900 transition-colors hover:text-slate-600"
+        >
           Secondsy
         </Link>
 
-        {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="hidden md:block">
+        <form
+          onSubmit={handleSearchSubmit}
+          className={`${isMobileSearchOpen ? "order-3 w-full" : "hidden"} md:order-2 md:block md:flex-1`}
+        >
           <Input
             name="q"
             type="text"
             placeholder="Search for anything..."
             value={searchTerm}
             onChange={(event) => handleSearchChange(event.target.value)}
-            className="px-4 py-2 bg-slate-100 rounded-lg w-[400px]"
+            className="h-10 w-full rounded-lg border-slate-200 bg-white px-4 text-sm placeholder:text-slate-400 md:h-11"
           />
         </form>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="order-2 ml-auto flex items-center gap-2 md:order-3">
+          <button
+            type="button"
+            aria-label={isMobileSearchOpen ? "Close search" : "Open search"}
+            onClick={() => setIsMobileSearchOpen((prev) => !prev)}
+            className={`${iconButtonClass} md:hidden`}
+          >
+            {isMobileSearchOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
+          </button>
+
           {isLoggedIn ? (
-            <Link
-              href="/messages"
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border hover:bg-slate-100"
-              aria-label="Messages"
-            >
+            <Link href="/messages" className={iconButtonClass} aria-label="Messages">
               <MessageCircle className="h-5 w-5" />
               {unreadCount > 0 ? (
                 <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold leading-5 text-white">
@@ -137,36 +144,17 @@ export default function Header() {
             </Link>
           ) : null}
 
-          {isLoggedIn ? (
-            <Link
-              href="/saved"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border hover:bg-slate-100"
-              aria-label="Saved for later"
-            >
-              <Bookmark className="h-5 w-5" />
-            </Link>
-          ) : null}
-
-          <Button
-            variant="outline"
-            onClick={handleSellClick}
-            disabled={loading}
-            className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
-          >
-            Sell Item
-          </Button>
-
           {!isLoggedIn ? (
             <Link
               href={`/auth/login?redirect=${encodeURIComponent(pathname || "/")}`}
-              className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 md:h-10 md:px-4"
             >
               Login
             </Link>
           ) : (
             <Link
               href="/profile"
-              className="px-4 py-2 rounded-lg border font-medium hover:bg-slate-100"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100 md:h-10 md:px-4"
             >
               Profile
             </Link>

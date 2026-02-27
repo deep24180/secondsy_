@@ -1,7 +1,15 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import ProductCard, { Product } from "../product/ProductCard";
@@ -11,7 +19,6 @@ import PageLoader from "../ui/page-loader";
 const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
@@ -104,6 +111,11 @@ export default function Dashboard() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      const isSold = Boolean(product.sold) || product.status === "Sold";
+      if (isSold) {
+        return false;
+      }
+
       const productCategory = product.category.toLowerCase();
       const matchesCategory = categoryMatches(productCategory);
       const matchesSubcategory = subcategoryMatches(
@@ -124,7 +136,9 @@ export default function Dashboard() {
             .includes(normalizedQuery)
         : true;
 
-      return matchesCategory && matchesSubcategory && matchesTag && searchMatches;
+      return (
+        matchesCategory && matchesSubcategory && matchesTag && searchMatches
+      );
     });
   }, [
     products,
@@ -197,7 +211,8 @@ export default function Dashboard() {
     }
 
     const queryString = params.toString();
-    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    window.history.replaceState(null, "", nextUrl);
   };
 
   const updateSubcategoryFilter = (subcategory: string) => {
@@ -211,11 +226,12 @@ export default function Dashboard() {
     }
 
     const queryString = params.toString();
-    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    window.history.replaceState(null, "", nextUrl);
   };
 
   const clearAllFilters = () => {
-    router.push(pathname);
+    window.history.replaceState(null, "", pathname);
   };
 
   if (isFetchingProducts) {
@@ -224,36 +240,89 @@ export default function Dashboard() {
 
   const hasActiveFilters =
     normalizedQuery || selectedCategory || selectedSubcategory || selectedTag;
+  const selectedCategoryLabel = searchParams.get("category") || "";
+  const selectedSubcategoryLabel = searchParams.get("subcategory") || "";
+  const activeFilterCount = [
+    normalizedQuery,
+    selectedCategory,
+    selectedSubcategory,
+    selectedTag,
+  ].filter(Boolean).length;
+  const soldOutCount = products.filter(
+    (product) => Boolean(product.sold) || product.status === "Sold",
+  ).length;
+  const liveListingsCount = Math.max(products.length - soldOutCount, 0);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#eff6ff_28%,_#f8fafc_50%,_#ffffff_100%)]">
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-6 shadow-[0_20px_55px_-30px_rgba(30,64,175,0.35)] sm:p-8">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-200/45 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-cyan-100/55 blur-3xl" />
+    <div className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)]">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(130deg,_#0f172a_0%,_#1e293b_42%,_#1d4ed8_100%)] p-6 text-white shadow-[0_30px_70px_-35px_rgba(15,23,42,0.75)] sm:p-8">
+          <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-blue-300/25 blur-3xl" />
 
-          <div className="relative z-10 mb-8">
+          <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                Marketplace Dashboard
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100/90">
+                Main Dashboard
               </p>
-              <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                Discover smarter deals in one clean marketplace view
+              <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                Find listings faster with focused filters and cleaner browsing
               </h1>
-              <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-                Browse by category, narrow by subcategory and tags, then find
-                the right listing fast.
+              <p className="mt-3 max-w-2xl text-sm text-slate-100/90 sm:text-base">
+                Explore categories, apply smart filter chips, and scan matching
+                products in one place.
               </p>
+              <Link
+                href="/sell-item"
+                className="mt-5 inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white px-5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                Sell Item
+              </Link>
             </div>
-          </div>
 
-          <div className="relative z-10 rounded-2xl border border-slate-200/80 bg-white/90 p-4 sm:p-6">
-            <CategoriesSection />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
+                  Total
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{products.length}</p>
+                <p className="text-xs text-slate-200">All listings</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
+                  Live
+                </p>
+                <p className="mt-1 text-2xl font-semibold">
+                  {liveListingsCount}
+                </p>
+                <p className="text-xs text-slate-200">Available now</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
+                  Sold
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{soldOutCount}</p>
+                <p className="text-xs text-slate-200">Completed</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
+                  Active Filters
+                </p>
+                <p className="mt-1 text-2xl font-semibold">
+                  {activeFilterCount}
+                </p>
+                <p className="text-xs text-slate-200">Current context</p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] lg:sticky lg:top-24">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] sm:p-6">
+          <CategoriesSection />
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="h-fit rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_22px_50px_-40px_rgba(15,23,42,0.45)] lg:sticky lg:top-24">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -292,7 +361,7 @@ export default function Dashboard() {
                     Category
                   </p>
                   <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                    {searchParams.get("category")}
+                    {selectedCategoryLabel}
                   </span>
                 </div>
               ) : (
@@ -382,17 +451,18 @@ export default function Dashboard() {
             </div>
           </aside>
 
-          <div className="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:p-8">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_22px_50px_-40px_rgba(15,23,42,0.45)] sm:p-8">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                   Fresh Listings
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Updated marketplace view based on your selected filters.
+                  Updated marketplace view based on your selected filters and
+                  search context.
                 </p>
               </div>
-              <p className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-600">
+              <p className="rounded-full border border-teal-100 bg-teal-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
                 {filteredProducts.length} matching item
                 {filteredProducts.length === 1 ? "" : "s"}
               </p>
@@ -407,12 +477,12 @@ export default function Dashboard() {
                 ) : null}
                 {selectedCategory ? (
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                    Category: {searchParams.get("category")}
+                    Category: {selectedCategoryLabel}
                   </span>
                 ) : null}
                 {selectedSubcategory ? (
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                    Subcategory: {searchParams.get("subcategory")}
+                    Subcategory: {selectedSubcategoryLabel}
                   </span>
                 ) : null}
                 {selectedTag ? (

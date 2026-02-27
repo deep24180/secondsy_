@@ -226,7 +226,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 <p className="text-2xl font-bold text-slate-900 sm:text-3xl">
                   {formatPriceINR(Number(product.price) || 0)}
                 </p>
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
                   {product.condition}
                 </span>
               </div>

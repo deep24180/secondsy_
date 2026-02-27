@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  Bookmark,
+  MessageCircle,
   Plus,
   Trash2,
   Edit3,
@@ -199,7 +201,7 @@ export default function MyAdsPage() {
         ? "bg-slate-200 text-slate-700"
         : status === "Expired"
           ? "bg-amber-100 text-amber-700"
-          : "bg-emerald-100 text-emerald-700"
+          : "bg-blue-100 text-blue-700"
     }`;
 
   const handleLogout = async () => {
@@ -218,7 +220,7 @@ export default function MyAdsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#dbeafe_0%,_#f8fafc_35%,_#ffffff_100%)] py-5 sm:py-8">
+    <div className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)] py-5 sm:py-8">
       <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-8">
         <aside className="w-full self-start rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] lg:w-72 lg:sticky lg:top-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
@@ -238,9 +240,17 @@ export default function MyAdsPage() {
             </div>
             <Link
               href="/messages"
-              className="flex items-center rounded-xl px-4 py-2.5 text-sm text-slate-600 transition hover:bg-slate-100"
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-slate-600 transition hover:bg-slate-100"
             >
+              <MessageCircle size={16} />
               Messages
+            </Link>
+            <Link
+              href="/saved"
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm text-slate-600 transition hover:bg-slate-100"
+            >
+              <Bookmark size={16} />
+              Saved
             </Link>
 
             <Button
@@ -281,7 +291,7 @@ export default function MyAdsPage() {
               <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
                 {ads.length} total
               </span>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">
+              <span className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-700">
                 {ads.filter((ad) => ad.status === "Active").length} active
               </span>
             </div>
