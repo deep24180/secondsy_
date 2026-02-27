@@ -34,6 +34,22 @@ import {
 } from "../../lib/cloudinary";
 import { Input } from "../../components/ui/input";
 import ImagePreviewModal from "../../components/modal/ImagePreviewModal";
+import { getProductById } from "../../lib/api/product";
+
+type ConversationProductInfo = {
+  id: string;
+  title: string;
+  images: string[];
+  price?: number;
+  location?: string;
+};
+
+const formatPriceINR = (price: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(price);
 
 const formatMessageDate = (value: string) => {
   const parsed = new Date(value);
@@ -112,6 +128,9 @@ export default function MessagesPage() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [conversationSearch, setConversationSearch] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [productsById, setProductsById] = useState<
+    Record<string, ConversationProductInfo>
+  >({});
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -141,6 +160,11 @@ export default function MessagesPage() {
         (conversation) => conversation.id === selectedConversationId,
       ) || null,
     [conversations, selectedConversationId],
+  );
+  const selectedConversationProduct = useMemo(
+    () =>
+      selectedConversation ? productsById[selectedConversation.productId] : null,
+    [productsById, selectedConversation],
   );
 
   const selectedConversationSeenAt = useMemo(() => {
@@ -187,11 +211,18 @@ export default function MessagesPage() {
       );
 
       return [partnerName, latestMessage?.content || ""]
+        .concat(productsById[conversation.productId]?.title || "")
         .join(" ")
         .toLowerCase()
         .includes(keyword);
     });
-  }, [conversationSearch, sortedConversations, user?.id, messagesByConversation]);
+  }, [
+    conversationSearch,
+    sortedConversations,
+    user?.id,
+    messagesByConversation,
+    productsById,
+  ]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -227,8 +258,19 @@ export default function MessagesPage() {
               b.messages?.[0]?.createdAt || b.lastMessageAt || b.createdAt;
             return new Date(bLast).getTime() - new Date(aLast).getTime();
           });
+          const matchingConversation = sorted.find((conversation) => {
+            if (!productId || conversation.productId !== productId) return false;
+            if (!sellerId) return true;
+
+            return (
+              conversation.participantAId === sellerId ||
+              conversation.participantBId === sellerId
+            );
+          });
           const firstId = sorted[0].id;
-          setSelectedConversationId((current) => current || firstId);
+          setSelectedConversationId(
+            matchingConversation?.id || firstId,
+          );
         }
       } catch (err) {
         if (!mounted) return;
@@ -247,6 +289,68 @@ export default function MessagesPage() {
       mounted = false;
     };
   }, [accessToken, productId, sellerId, user?.id]);
+
+  useEffect(() => {
+    if (conversations.length === 0) return;
+
+    const missingProductIds = Array.from(
+      new Set(
+        conversations
+          .map((conversation) => conversation.productId)
+          .filter((id) => id && !productsById[id]),
+      ),
+    );
+
+    if (missingProductIds.length === 0) return;
+
+    let mounted = true;
+
+    Promise.all(
+      missingProductIds.map(
+        async (id): Promise<ConversationProductInfo | null> => {
+        try {
+          const response = await getProductById(id);
+          const product = response?.data || response;
+
+          if (!product?.id) return null;
+
+          return {
+            id: product.id,
+            title: product.title || "Untitled Product",
+            images: Array.isArray(product.images) ? product.images : [],
+            price:
+              typeof product.price === "number" ? product.price : undefined,
+            location:
+              typeof product.location === "string"
+                ? product.location
+                : undefined,
+          };
+        } catch {
+          return null;
+        }
+      }),
+    ).then((products) => {
+      if (!mounted) return;
+
+      const nextEntries = products.filter(
+        (product): product is ConversationProductInfo => Boolean(product),
+      );
+
+      if (nextEntries.length === 0) return;
+
+      setProductsById((prev) => {
+        const updated = { ...prev };
+        for (const product of nextEntries) {
+          updated[product.id] = product;
+        }
+        return updated;
+      });
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [conversations, productsById]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -531,6 +635,11 @@ export default function MessagesPage() {
                     lastMessage?.createdAt ||
                     conversation.lastMessageAt ||
                     conversation.createdAt;
+                  const conversationProduct =
+                    productsById[conversation.productId];
+                  const productTitle =
+                    conversationProduct?.title || "Product unavailable";
+                  const productImage = conversationProduct?.images?.[0];
 
                   return (
                     <button
@@ -577,7 +686,22 @@ export default function MessagesPage() {
                           >
                             {previewText}
                           </p>
+                          <p className="mt-1 line-clamp-1 text-[11px] font-medium text-blue-700/90">
+                            Re: {productTitle}
+                          </p>
                         </div>
+
+                        {productImage ? (
+                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                            <Image
+                              src={productImage}
+                              alt={productTitle}
+                              width={44}
+                              height={44}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     </button>
                   );
@@ -593,37 +717,71 @@ export default function MessagesPage() {
           >
             <div className="border-b border-slate-200 bg-blue-50/60 px-4 py-3">
               {selectedConversation ? (
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMobileView("list")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-white text-sm text-blue-700 md:hidden"
-                      aria-label="Back to conversations"
-                    >
-                      ←
-                    </button>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-blue-700">
-                        Conversation
-                      </p>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {getUserDisplayName(
-                          getConversationPartner(selectedConversation, user.id),
-                          getConversationPartnerId(selectedConversation, user.id),
-                        )}
-                      </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setMobileView("list")}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-white text-sm text-blue-700 md:hidden"
+                        aria-label="Back to conversations"
+                      >
+                        ←
+                      </button>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-[0.14em] text-blue-700">
+                          Conversation
+                        </p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {getUserDisplayName(
+                            getConversationPartner(selectedConversation, user.id),
+                            getConversationPartnerId(selectedConversation, user.id),
+                          )}
+                        </p>
+                      </div>
                     </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        socketReady
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {socketReady ? "Live" : "Reconnecting"}
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      socketReady
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
+
+                  <Link
+                    href={`/product/${selectedConversation.productId}`}
+                    className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white px-3 py-2 transition hover:border-blue-300 hover:bg-blue-50/40"
                   >
-                    {socketReady ? "Live" : "Reconnecting"}
-                  </span>
+                    {selectedConversationProduct?.images?.[0] ? (
+                      <Image
+                        src={selectedConversationProduct.images[0]}
+                        alt={selectedConversationProduct?.title || "Product"}
+                        width={52}
+                        height={52}
+                        className="h-12 w-12 shrink-0 rounded-lg border border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-[11px] font-semibold text-slate-500">
+                        ITEM
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-blue-700">
+                        Listing
+                      </p>
+                      <p className="line-clamp-1 text-sm font-semibold text-slate-900">
+                        {selectedConversationProduct?.title || "View product"}
+                      </p>
+                      {typeof selectedConversationProduct?.price === "number" ? (
+                        <p className="text-xs font-semibold text-slate-700">
+                          {formatPriceINR(selectedConversationProduct.price)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </Link>
                 </div>
               ) : (
                 <p className="text-sm text-slate-500">
@@ -697,6 +855,21 @@ export default function MessagesPage() {
               onSubmit={sendMessage}
               className="border-t border-slate-200 bg-white/95 p-3 sm:p-4"
             >
+              <div className="mb-2 flex flex-wrap gap-2">
+                {["Is this still available?", "Can you share final price?"].map(
+                  (quickText) => (
+                    <button
+                      key={quickText}
+                      type="button"
+                      onClick={() => setNewMessage(quickText)}
+                      disabled={!selectedConversationId}
+                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {quickText}
+                    </button>
+                  ),
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <Input
                   ref={imageInputRef}
