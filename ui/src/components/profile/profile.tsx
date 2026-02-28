@@ -67,7 +67,12 @@ export default function MyAdsPage() {
             status: (product.status as ProductStatus) || "Active",
             images: Array.isArray(product.images) ? product.images : [],
             location: product.location || "",
-            createdAt: product.createdAt || "",
+            createdAt:
+              typeof product.createdAt === "string"
+                ? product.createdAt
+                : product.createdAt instanceof Date
+                  ? product.createdAt.toISOString()
+                  : "",
             userId: product.userId,
           }));
 
