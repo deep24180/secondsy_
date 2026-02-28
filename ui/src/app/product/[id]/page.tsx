@@ -42,7 +42,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       try {
         const data = await getProductById(id);
         if (isMounted) {
-          setProduct(data?.data || data);
+          setProduct(data);
         }
       } catch {
         if (isMounted) {

@@ -1,4 +1,4 @@
-import type { ProductListResponse, SellFormData } from "../../type";
+import type { Product, ProductListResponse, SellFormData } from "../../type";
 import { API_URL } from "./user";
 
 type ProductQuery = {
@@ -12,6 +12,8 @@ type ProductQuery = {
   status?: string;
   excludeStatus?: string;
 };
+
+type ProductResponse = Product | { data: Product };
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
@@ -59,7 +61,8 @@ export const getProducts = async (query?: ProductQuery) => {
 
 export const getProductById = async (id: string) => {
   const response = await fetch(`${API_URL}/products/${id}`);
-  return parseResponse(response);
+  const result = await parseResponse<ProductResponse>(response);
+  return "data" in result ? result.data : result;
 };
 
 export const updateProductStatus = async (

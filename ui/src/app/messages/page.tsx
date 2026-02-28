@@ -304,8 +304,7 @@ export default function MessagesPage() {
       missingProductIds.map(
         async (id): Promise<ConversationProductInfo | null> => {
         try {
-          const response = await getProductById(id);
-          const product = response?.data || response;
+          const product = await getProductById(id);
 
           if (!product?.id) return null;
 

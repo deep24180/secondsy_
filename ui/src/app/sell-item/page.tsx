@@ -134,8 +134,7 @@ export default function SellPage() {
       setLoadingEditData(true);
 
       try {
-        const response = await getProductById(editId!);
-        const product = response?.data || response;
+        const product = await getProductById(editId!);
 
         if (!product) {
           throw new Error("Product not found.");
