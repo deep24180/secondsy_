@@ -581,7 +581,7 @@ export default function MessagesPage() {
           </div>
           <Link
             href="/"
-            className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 backdrop-blur transition hover:bg-white/20"
+            className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 transition hover:bg-white/20"
           >
             Go back
           </Link>
@@ -593,7 +593,7 @@ export default function MessagesPage() {
           </div>
         ) : null}
 
-        <section className="grid min-h-[72vh] gap-4 rounded-3xl border border-slate-200/70 bg-white/90 p-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur md:grid-cols-[320px_1fr] md:p-4">
+        <section className="grid min-h-[72vh] gap-4 rounded-3xl border border-slate-200/70 bg-white/90 p-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)] backdrop- md:grid-cols-[320px_1fr] md:p-4">
           <aside
             className={`${
               mobileView === "chat" ? "hidden md:flex" : "flex"

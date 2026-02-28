@@ -98,7 +98,7 @@ export default function Header() {
     "relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-100 md:h-10 md:w-10";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-gradient-to-b from-white to-slate-50/80 backdrop-">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:gap-4">
         <Link
           href="/"

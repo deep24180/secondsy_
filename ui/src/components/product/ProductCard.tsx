@@ -31,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         ) : (
           <div className="h-64 w-full bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300" />
         )}
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+        <span className="absolute left-2.5 top-2.5 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white backdrop--sm">
           {product.category}
         </span>
       </div>

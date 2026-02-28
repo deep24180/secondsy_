@@ -112,8 +112,8 @@ export default function SavedPage() {
     <main className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)] px-4 py-8 sm:py-10">
       <div className="mx-auto max-w-6xl space-y-6">
         <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-[linear-gradient(130deg,_#0f172a_0%,_#1e293b_42%,_#1d4ed8_100%)] p-6 text-white shadow-[0_35px_80px_-40px_rgba(15,23,42,0.75)] sm:p-8">
-          <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-blue-300/30 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 -3xl" />
+          <div className="pointer-events-none absolute -left-8 bottom-0 h-40 w-40 rounded-full bg-blue-300/30 -3xl" />
 
           <div className="relative z-10 flex flex-wrap items-end justify-between gap-6">
             <div className="space-y-3">
@@ -135,13 +135,13 @@ export default function SavedPage() {
             </div>
 
             <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100/90">
                   Total Saved
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{savedItems.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100/90">
                   Status
                 </p>
@@ -158,7 +158,7 @@ export default function SavedPage() {
             {[1, 2, 3].map((key) => (
               <div
                 key={key}
-                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-blur"
+                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-"
               >
                 <div className="h-44 animate-pulse rounded-2xl bg-slate-200" />
                 <div className="mt-4 h-5 w-4/5 animate-pulse rounded-lg bg-slate-200" />
@@ -230,7 +230,7 @@ export default function SavedPage() {
                         No image
                       </div>
                     )}
-                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/85 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-blur">
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/85 px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm backdrop-">
                       <span className="material-symbols-outlined text-[15px] leading-none text-blue-700">
                         bookmark
                       </span>

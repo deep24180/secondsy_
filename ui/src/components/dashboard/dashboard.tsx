@@ -302,8 +302,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)]">
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[linear-gradient(130deg,_#0f172a_0%,_#1e293b_42%,_#1d4ed8_100%)] p-6 text-white shadow-[0_30px_70px_-35px_rgba(15,23,42,0.75)] sm:p-8">
-          <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-blue-300/25 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 -3xl" />
+          <div className="pointer-events-none absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-blue-300/25 -3xl" />
 
           <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
             <div>
@@ -326,21 +326,21 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
                   Total
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{totalMatching}</p>
                 <p className="text-xs text-slate-200">Matching filters</p>
               </div>
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
                   Loaded
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{products.length}</p>
                 <p className="text-xs text-slate-200">In this view</p>
               </div>
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
                   Remaining
                 </p>
@@ -349,7 +349,7 @@ export default function Dashboard() {
                 </p>
                 <p className="text-xs text-slate-200">To load</p>
               </div>
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
                   Active Filters
                 </p>
