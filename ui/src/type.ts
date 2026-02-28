@@ -46,6 +46,8 @@ export type Product = {
   createdAt: string | Date;
 };
 
+export type SavedProduct = Product;
+
 export type ProductListMeta = {
   total: number;
   page: number;
