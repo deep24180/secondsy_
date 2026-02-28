@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import { getProducts } from "../../lib/api/product";
@@ -20,6 +20,7 @@ import ProductCard from "../product/ProductCard";
 const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
@@ -31,14 +32,15 @@ export default function Dashboard() {
   const [totalMatching, setTotalMatching] = useState(0);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const previousFilterKeyRef = useRef("");
   const normalizedQuery = query.trim().toLowerCase();
-  const selectedCategory = (searchParams.get("category") || "")
-    .trim()
-    .toLowerCase();
-  const selectedSubcategory = (searchParams.get("subcategory") || "")
-    .trim()
-    .toLowerCase();
-  const selectedTag = (searchParams.get("tag") || "").trim().toLowerCase();
+  const selectedCategoryParam = (searchParams.get("category") || "").trim();
+  const selectedSubcategoryParam = (searchParams.get("subcategory") || "").trim();
+  const selectedTagParam = (searchParams.get("tag") || "").trim();
+
+  const selectedCategory = selectedCategoryParam.toLowerCase();
+  const selectedSubcategory = selectedSubcategoryParam.toLowerCase();
+  const selectedTag = selectedTagParam.toLowerCase();
   const filterKey = `${normalizedQuery}::${selectedCategory}::${selectedSubcategory}::${selectedTag}`;
 
   const categoryMatches = useCallback(
@@ -69,7 +71,7 @@ export default function Dashboard() {
   );
 
   const availableSubcategories = useMemo(() => {
-    const subcategoriesSet = new Set<string>();
+    const subcategoriesMap = new Map<string, string>();
 
     products.forEach((product) => {
       const productCategory = product.category.toLowerCase();
@@ -77,17 +79,20 @@ export default function Dashboard() {
         return;
       }
 
-      const normalizedSubcategory = product.subcategory.trim().toLowerCase();
-      if (normalizedSubcategory) {
-        subcategoriesSet.add(normalizedSubcategory);
+      const rawSubcategory = product.subcategory.trim();
+      const normalizedSubcategory = rawSubcategory.toLowerCase();
+      if (normalizedSubcategory && !subcategoriesMap.has(normalizedSubcategory)) {
+        subcategoriesMap.set(normalizedSubcategory, rawSubcategory);
       }
     });
 
-    return Array.from(subcategoriesSet).sort((a, b) => a.localeCompare(b));
+    return Array.from(subcategoriesMap.values()).sort((a, b) =>
+      a.localeCompare(b),
+    );
   }, [products, categoryMatches]);
 
   const availableTags = useMemo(() => {
-    const tagsSet = new Set<string>();
+    const tagsMap = new Map<string, string>();
 
     products.forEach((product) => {
       const productCategory = product.category.toLowerCase();
@@ -100,14 +105,15 @@ export default function Dashboard() {
       }
 
       product.tags.forEach((tag) => {
-        const normalizedTag = tag.trim().toLowerCase();
-        if (normalizedTag) {
-          tagsSet.add(normalizedTag);
+        const rawTag = tag.trim();
+        const normalizedTag = rawTag.toLowerCase();
+        if (normalizedTag && !tagsMap.has(normalizedTag)) {
+          tagsMap.set(normalizedTag, rawTag);
         }
       });
     });
 
-    return Array.from(tagsSet).sort((a, b) => a.localeCompare(b));
+    return Array.from(tagsMap.values()).sort((a, b) => a.localeCompare(b));
   }, [products, categoryMatches]);
 
   const filteredProducts = useMemo(() => {
@@ -153,19 +159,21 @@ export default function Dashboard() {
   ]);
 
   useEffect(() => {
-    setProducts([]);
-    setPage(1);
-    setTotalMatching(0);
-    setHasNextPage(false);
-  }, [filterKey]);
-
-  useEffect(() => {
     let mounted = true;
 
+    const hasFilterChanged = previousFilterKeyRef.current !== filterKey;
+    if (hasFilterChanged && page !== 1) {
+      setPage(1);
+      return;
+    }
+
+    previousFilterKeyRef.current = filterKey;
+    const isFirstPaintLoad = page === 1 && products.length === 0;
+
     const fetchProducts = async () => {
-      if (page === 1) {
+      if (isFirstPaintLoad) {
         setIsFetchingProducts(true);
-      } else {
+      } else if (page > 1) {
         setIsLoadingMore(true);
       }
 
@@ -174,9 +182,9 @@ export default function Dashboard() {
           page,
           limit: PRODUCTS_PER_PAGE,
           q: normalizedQuery || undefined,
-          category: selectedCategory || undefined,
-          subcategory: selectedSubcategory || undefined,
-          tag: selectedTag || undefined,
+          category: selectedCategoryParam || undefined,
+          subcategory: selectedSubcategoryParam || undefined,
+          tag: selectedTagParam || undefined,
           excludeStatus: "Sold,Expired",
         });
 
@@ -193,8 +201,11 @@ export default function Dashboard() {
         }
       } finally {
         if (!mounted) return;
-        setIsFetchingProducts(false);
-        setIsLoadingMore(false);
+        if (isFirstPaintLoad) {
+          setIsFetchingProducts(false);
+        } else if (page > 1) {
+          setIsLoadingMore(false);
+        }
       }
     };
 
@@ -210,6 +221,9 @@ export default function Dashboard() {
     selectedCategory,
     selectedSubcategory,
     selectedTag,
+    selectedCategoryParam,
+    selectedSubcategoryParam,
+    selectedTagParam,
   ]);
 
   useEffect(() => {
@@ -234,10 +248,11 @@ export default function Dashboard() {
   }, [hasNextPage, isLoadingMore, isFetchingProducts]);
 
   const updateTagFilter = (tag: string) => {
-    const nextTag = tag.trim().toLowerCase();
+    const nextTag = tag.trim();
+    const nextTagNormalized = nextTag.toLowerCase();
     const params = new URLSearchParams(searchParams.toString());
 
-    if (selectedTag === nextTag) {
+    if (selectedTag === nextTagNormalized) {
       params.delete("tag");
     } else {
       params.set("tag", nextTag);
@@ -245,14 +260,15 @@ export default function Dashboard() {
 
     const queryString = params.toString();
     const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    window.history.replaceState(null, "", nextUrl);
+    router.replace(nextUrl, { scroll: false });
   };
 
   const updateSubcategoryFilter = (subcategory: string) => {
-    const nextSubcategory = subcategory.trim().toLowerCase();
+    const nextSubcategory = subcategory.trim();
+    const nextSubcategoryNormalized = nextSubcategory.toLowerCase();
     const params = new URLSearchParams(searchParams.toString());
 
-    if (selectedSubcategory === nextSubcategory) {
+    if (selectedSubcategory === nextSubcategoryNormalized) {
       params.delete("subcategory");
     } else {
       params.set("subcategory", nextSubcategory);
@@ -260,26 +276,26 @@ export default function Dashboard() {
 
     const queryString = params.toString();
     const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    window.history.replaceState(null, "", nextUrl);
+    router.replace(nextUrl, { scroll: false });
   };
 
   const clearAllFilters = () => {
-    window.history.replaceState(null, "", pathname);
+    router.replace(pathname, { scroll: false });
   };
 
-  if (isFetchingProducts) {
+  if (isFetchingProducts && products.length === 0) {
     return <PageLoader message="Loading listings..." />;
   }
 
   const hasActiveFilters =
-    normalizedQuery || selectedCategory || selectedSubcategory || selectedTag;
-  const selectedCategoryLabel = searchParams.get("category") || "";
-  const selectedSubcategoryLabel = searchParams.get("subcategory") || "";
+    normalizedQuery || selectedCategoryParam || selectedSubcategoryParam || selectedTagParam;
+  const selectedCategoryLabel = selectedCategoryParam;
+  const selectedSubcategoryLabel = selectedSubcategoryParam;
   const activeFilterCount = [
     normalizedQuery,
-    selectedCategory,
-    selectedSubcategory,
-    selectedTag,
+    selectedCategoryParam,
+    selectedSubcategoryParam,
+    selectedTagParam,
   ].filter(Boolean).length;
 
   return (
@@ -442,7 +458,7 @@ export default function Dashboard() {
                         type="button"
                         onClick={() => updateSubcategoryFilter(subcategory)}
                         className={`rounded-full border px-3 py-1 text-xs font-medium capitalize transition ${
-                          selectedSubcategory === subcategory
+                          selectedSubcategory === subcategory.toLowerCase()
                             ? "border-blue-200 bg-blue-50 text-blue-700"
                             : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                         }`}
@@ -466,7 +482,7 @@ export default function Dashboard() {
                         type="button"
                         onClick={() => updateTagFilter(tag)}
                         className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                          selectedTag === tag
+                          selectedTag === tag.toLowerCase()
                             ? "border-cyan-200 bg-cyan-50 text-cyan-700"
                             : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                         }`}

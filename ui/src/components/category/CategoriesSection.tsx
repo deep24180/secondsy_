@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { categories as fallbackCategories } from "../../data/categories";
 import type { Category } from "../../type";
 import { getCategories } from "../../lib/api/category";
 import CategoryCard from "./CategoryCard";
 
 export default function CategoriesSection() {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sliderRef = useRef<HTMLDivElement | null>(null);
@@ -39,7 +40,7 @@ export default function CategoriesSection() {
 
     const nextQuery = params.toString();
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-    window.history.replaceState(null, "", nextUrl);
+    router.replace(nextUrl, { scroll: false });
   };
 
   const scrollCategories = (direction: "left" | "right") => {
@@ -88,7 +89,7 @@ export default function CategoriesSection() {
               name="All Categories"
               icon="apps"
               isActive={!activeCategory}
-              onClick={() => window.history.replaceState(null, "", pathname)}
+              onClick={() => router.replace(pathname, { scroll: false })}
             />
           </div>
           {categories.map((cat) => (
