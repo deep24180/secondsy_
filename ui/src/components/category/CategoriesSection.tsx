@@ -43,6 +43,24 @@ export default function CategoriesSection() {
     router.replace(nextUrl, { scroll: false });
   };
 
+  const selectAllCategories = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    const hadCategoryFilters =
+      params.has("category") || params.has("subcategory") || params.has("tag");
+
+    if (!hadCategoryFilters) {
+      return;
+    }
+
+    params.delete("category");
+    params.delete("subcategory");
+    params.delete("tag");
+
+    const nextQuery = params.toString();
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  };
+
   const scrollCategories = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
     const amount = Math.round(sliderRef.current.clientWidth * 0.8);
@@ -89,7 +107,7 @@ export default function CategoriesSection() {
               name="All Categories"
               icon="apps"
               isActive={!activeCategory}
-              onClick={() => router.replace(pathname, { scroll: false })}
+              onClick={selectAllCategories}
             />
           </div>
           {categories.map((cat) => (
