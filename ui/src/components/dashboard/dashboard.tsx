@@ -12,9 +12,10 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
-import ProductCard, { Product } from "../product/ProductCard";
 import { getProducts } from "../../lib/api/product";
 import PageLoader from "../ui/page-loader";
+import { Product } from "@/type";
+import ProductCard from "../product/ProductCard";
 
 const PRODUCTS_PER_PAGE = 8;
 
