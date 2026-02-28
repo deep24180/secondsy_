@@ -12,6 +12,7 @@ import {
   Edit3,
   CheckCircle,
   RotateCcw,
+  Clock3,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -21,7 +22,7 @@ import {
   getProducts,
   updateProductStatus,
 } from "../../lib/api/product";
-import type { Ad, ProductApiItem, ProductStatus } from "../../type";
+import type { Ad, ProductStatus } from "../../type";
 import { UserContext } from "../../context/user-context";
 import PageLoader from "../ui/page-loader";
 import DeleteModal from "../modal/DeleteModal";
@@ -54,13 +55,8 @@ export default function MyAdsPage() {
       setError(null);
 
       try {
-        const response = await getProducts();
-        const products = Array.isArray(response?.data)
-          ? response.data
-          : Array.isArray(response)
-            ? response
-            : [];
-        const typedProducts = products as ProductApiItem[];
+        const response = await getProducts({ userId: user.id });
+        const typedProducts = response.data;
 
         const mappedAds = typedProducts
           .filter((product) => product.userId === user.id)
@@ -113,6 +109,14 @@ export default function MyAdsPage() {
     await updateProductStatus(id, "Active", accessToken);
     setAds((prev) =>
       prev.map((ad) => (ad.id === id ? { ...ad, status: "Active" } : ad)),
+    );
+  };
+
+  const expireAd = async (id: string) => {
+    if (!accessToken) return;
+    await updateProductStatus(id, "Expired", accessToken);
+    setAds((prev) =>
+      prev.map((ad) => (ad.id === id ? { ...ad, status: "Expired" } : ad)),
     );
   };
 
@@ -393,7 +397,7 @@ export default function MyAdsPage() {
                         </>
                       )}
 
-                      {ad.status === "Sold" && (
+                      {(ad.status === "Sold" || ad.status === "Expired") && (
                         <Button
                           onClick={() => relist(ad.id)}
                           type="button"
@@ -402,6 +406,18 @@ export default function MyAdsPage() {
                         >
                           <RotateCcw size={16} />
                           Relist
+                        </Button>
+                      )}
+
+                      {ad.status === "Active" && (
+                        <Button
+                          onClick={() => expireAd(ad.id)}
+                          type="button"
+                          variant="ghost"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <Clock3 size={16} />
+                          Expire
                         </Button>
                       )}
 

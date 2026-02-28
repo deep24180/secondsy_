@@ -46,6 +46,18 @@ export type Product = {
   createdAt: string | Date;
 };
 
+export type ProductListMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+};
+
+export type ProductListResponse = {
+  data: Product[];
+  meta: ProductListMeta;
+};
+
 export type Ad = {
   id: string;
   title: string;
@@ -105,6 +117,7 @@ export type Conversation = {
   participantA?: ConversationUser | null;
   participantB?: ConversationUser | null;
   lastMessageAt?: string | null;
+  lastReadAt?: string | null;
   createdAt: string;
   messages?: ConversationLatestMessage[];
 };

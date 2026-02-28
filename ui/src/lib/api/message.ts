@@ -72,3 +72,20 @@ export const sendConversationMessage = async (
 
   return parseResponse<{ message: ChatMessage }>(response);
 };
+
+export const markConversationRead = async (
+  conversationId: string,
+  accessToken: string,
+  seenAt?: string,
+) => {
+  const response = await fetch(
+    `${API_URL}/messages/conversations/${conversationId}/read`,
+    {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify(seenAt ? { seenAt } : {}),
+    },
+  );
+
+  return parseResponse<{ conversationId: string; lastReadAt: string }>(response);
+};

@@ -11,6 +11,7 @@ import { SupabaseAuthGuard } from '../auth/supabase.guard';
 import type { AuthenticatedRequest } from '../auth/auth-request.interface';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { MarkConversationReadDto } from './dto/mark-conversation-read.dto';
 import { MessagesService } from './messages.service';
 
 @Controller('messages')
@@ -51,5 +52,19 @@ export class MessagesController {
   ) {
     const currentUserId = req.user.sub;
     return this.messagesService.sendMessage(id, currentUserId, dto.content);
+  }
+
+  @Post('conversations/:id/read')
+  markConversationRead(
+    @Param('id') id: string,
+    @Body() dto: MarkConversationReadDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const currentUserId = req.user.sub;
+    return this.messagesService.markConversationRead(
+      id,
+      currentUserId,
+      dto.seenAt,
+    );
   }
 }

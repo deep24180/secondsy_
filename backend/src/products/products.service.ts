@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductsRepository } from './products.repository';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { QueryProductsDto } from './dto/query-products.dto';
 
 @Injectable()
 export class ProductsService {
@@ -11,8 +12,8 @@ export class ProductsService {
     return this.productsRepo.create(dto, userId);
   }
 
-  async findAll() {
-    return this.productsRepo.findAll();
+  async findAll(query?: QueryProductsDto) {
+    return this.productsRepo.findAll(query);
   }
 
   async findOne(id: string) {

@@ -22,12 +22,12 @@ export default function Dashboard() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFetchingProducts, setIsFetchingProducts] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
-  const [visibleCountByFilter, setVisibleCountByFilter] = useState<
-    Record<string, number>
-  >({});
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [totalMatching, setTotalMatching] = useState(0);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
@@ -111,8 +111,11 @@ export default function Dashboard() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const isSold = Boolean(product.sold) || product.status === "Sold";
-      if (isSold) {
+      const isInactive =
+        Boolean(product.sold) ||
+        product.status === "Sold" ||
+        product.status === "Expired";
+      if (isInactive) {
         return false;
       }
 
@@ -148,48 +151,77 @@ export default function Dashboard() {
     subcategoryMatches,
   ]);
 
-  const visibleCount = visibleCountByFilter[filterKey] ?? PRODUCTS_PER_PAGE;
-  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  useEffect(() => {
+    setProducts([]);
+    setPage(1);
+    setTotalMatching(0);
+    setHasNextPage(false);
+  }, [filterKey]);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchProducts = async () => {
-      setIsFetchingProducts(true);
+      if (page === 1) {
+        setIsFetchingProducts(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
       try {
-        const products = await getProducts();
-        setProducts(products);
+        const response = await getProducts({
+          page,
+          limit: PRODUCTS_PER_PAGE,
+          q: normalizedQuery || undefined,
+          category: selectedCategory || undefined,
+          subcategory: selectedSubcategory || undefined,
+          tag: selectedTag || undefined,
+          excludeStatus: "Sold,Expired",
+        });
+
+        if (!mounted) return;
+
+        setProducts((prev) =>
+          page === 1 ? response.data : [...prev, ...response.data],
+        );
+        setHasNextPage(response.meta.hasNextPage);
+        setTotalMatching(response.meta.total);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        if (mounted) {
+          console.error("Error fetching products:", error);
+        }
       } finally {
+        if (!mounted) return;
         setIsFetchingProducts(false);
+        setIsLoadingMore(false);
       }
     };
 
-    fetchProducts();
-  }, []);
+    void fetchProducts();
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    page,
+    filterKey,
+    normalizedQuery,
+    selectedCategory,
+    selectedSubcategory,
+    selectedTag,
+  ]);
 
   useEffect(() => {
-    if (!loaderRef.current) return;
+    if (!loaderRef.current || !hasNextPage || isLoadingMore || isFetchingProducts) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
 
-        if (
-          firstEntry.isIntersecting &&
-          !isLoading &&
-          visibleCount < filteredProducts.length
-        ) {
-          setIsLoading(true);
-
-          // simulate API delay
-          setTimeout(() => {
-            setVisibleCountByFilter((prev) => ({
-              ...prev,
-              [filterKey]:
-                (prev[filterKey] ?? PRODUCTS_PER_PAGE) + PRODUCTS_PER_PAGE,
-            }));
-            setIsLoading(false);
-          }, 1000);
+        if (firstEntry.isIntersecting) {
+          setPage((prev) => prev + 1);
         }
       },
       { threshold: 1 },
@@ -198,7 +230,7 @@ export default function Dashboard() {
     observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [isLoading, visibleCount, filteredProducts.length, filterKey]);
+  }, [hasNextPage, isLoadingMore, isFetchingProducts]);
 
   const updateTagFilter = (tag: string) => {
     const nextTag = tag.trim().toLowerCase();
@@ -248,10 +280,6 @@ export default function Dashboard() {
     selectedSubcategory,
     selectedTag,
   ].filter(Boolean).length;
-  const soldOutCount = products.filter(
-    (product) => Boolean(product.sold) || product.status === "Sold",
-  ).length;
-  const liveListingsCount = Math.max(products.length - soldOutCount, 0);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_50%,_#f8fafc_100%)]">
@@ -285,24 +313,24 @@ export default function Dashboard() {
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
                   Total
                 </p>
-                <p className="mt-1 text-2xl font-semibold">{products.length}</p>
-                <p className="text-xs text-slate-200">All listings</p>
+                <p className="mt-1 text-2xl font-semibold">{totalMatching}</p>
+                <p className="text-xs text-slate-200">Matching filters</p>
               </div>
               <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
-                  Live
+                  Loaded
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{products.length}</p>
+                <p className="text-xs text-slate-200">In this view</p>
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
+                  Remaining
                 </p>
                 <p className="mt-1 text-2xl font-semibold">
-                  {liveListingsCount}
+                  {Math.max(totalMatching - products.length, 0)}
                 </p>
-                <p className="text-xs text-slate-200">Available now</p>
-              </div>
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
-                  Sold
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{soldOutCount}</p>
-                <p className="text-xs text-slate-200">Completed</p>
+                <p className="text-xs text-slate-200">To load</p>
               </div>
               <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-blue-100/90">
@@ -494,7 +522,7 @@ export default function Dashboard() {
             ) : null}
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleProducts.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -505,12 +533,12 @@ export default function Dashboard() {
               </p>
             ) : null}
 
-            {visibleCount < filteredProducts.length && (
+            {hasNextPage && (
               <div
                 ref={loaderRef}
                 className="mt-12 flex h-20 items-center justify-center"
               >
-                {isLoading && (
+                {isLoadingMore && (
                   <span className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-blue-600" />
                 )}
               </div>

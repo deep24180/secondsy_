@@ -1,65 +1,65 @@
-import type { SellFormData } from "../../type";
+import type { ProductListResponse, SellFormData } from "../../type";
 import { API_URL } from "./user";
+
+type ProductQuery = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  category?: string;
+  subcategory?: string;
+  tag?: string;
+  userId?: string;
+  status?: string;
+  excludeStatus?: string;
+};
+
+const parseResponse = async <T>(response: Response): Promise<T> => {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+  }
+  return data as T;
+};
+
+const authHeaders = (accessToken: string) => ({
+  Authorization: `Bearer ${accessToken}`,
+  "Content-Type": "application/json",
+});
+
+const toQueryString = (query?: ProductQuery) => {
+  if (!query) return "";
+
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : "";
+};
 
 export const createProduct = async (
   createProductData: SellFormData,
   accessToken: string,
 ) => {
-  console.log(createProductData);
-  try {
-    const response = await fetch(`${API_URL}/products`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(createProductData),
-    });
+  const response = await fetch(`${API_URL}/products`, {
+    method: "POST",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(createProductData),
+  });
 
-    const data = await response.json();
-    console.log(response);
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data?.data || [];
-  } catch (error) {
-    console.error("Error while creating product:", error);
-    throw error;
-  }
+  return parseResponse(response);
 };
 
-export const getProducts = async () => {
-  try {
-    const response = await fetch(`${API_URL}/products`);
-
-    const data = await response.json();
-    console.log(data);
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error("Error while fetching products:", error);
-    throw error;
-  }
+export const getProducts = async (query?: ProductQuery) => {
+  const response = await fetch(`${API_URL}/products${toQueryString(query)}`);
+  return parseResponse<ProductListResponse>(response);
 };
 
 export const getProductById = async (id: string) => {
-  try {
-    const response = await fetch(`${API_URL}/products/${id}`);
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error while fetching product:", error);
-    throw error;
-  }
+  const response = await fetch(`${API_URL}/products/${id}`);
+  return parseResponse(response);
 };
 
 export const updateProductStatus = async (
@@ -67,26 +67,13 @@ export const updateProductStatus = async (
   status: "Active" | "Sold" | "Expired",
   accessToken: string,
 ) => {
-  try {
-    const response = await fetch(`${API_URL}/products/${id}/status`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }),
-    });
+  const response = await fetch(`${API_URL}/products/${id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify({ status }),
+  });
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error while updating product status:", error);
-    throw error;
-  }
+  return parseResponse(response);
 };
 
 export const updateProduct = async (
@@ -94,45 +81,22 @@ export const updateProduct = async (
   updateData: SellFormData,
   accessToken: string,
 ) => {
-  try {
-    const response = await fetch(`${API_URL}/products/${id}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updateData),
-    });
+  const response = await fetch(`${API_URL}/products/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(updateData),
+  });
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error while updating product:", error);
-    throw error;
-  }
+  return parseResponse(response);
 };
 
 export const deleteProduct = async (id: string, accessToken: string) => {
-  try {
-    const response = await fetch(`${API_URL}/products/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+  const response = await fetch(`${API_URL}/products/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data || null;
-  } catch (error) {
-    console.error("Error while deleting product:", error);
-    throw error;
-  }
+  return parseResponse(response);
 };

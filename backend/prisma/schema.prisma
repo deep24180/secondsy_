@@ -49,11 +49,26 @@ model Conversation {
   lastMessageAt    DateTime?
   createdAt        DateTime  @default(now())
   messages         Message[]
+  reads            ConversationRead[]
 
   @@index([participantAId])
   @@index([participantBId])
   @@index([productId])
   @@unique([productId, participantAId, participantBId])
+}
+
+model ConversationRead {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  lastReadAt     DateTime
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
 }
 
 model Message {

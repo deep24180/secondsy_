@@ -103,6 +103,13 @@ export class MessagesRepository {
             },
           },
         },
+        reads: {
+          where: { userId },
+          take: 1,
+          select: {
+            lastReadAt: true,
+          },
+        },
       },
       orderBy: {
         lastMessageAt: 'desc',
@@ -153,5 +160,24 @@ export class MessagesRepository {
     ]);
 
     return message;
+  }
+
+  markConversationRead(conversationId: string, userId: string, lastReadAt: Date) {
+    return this.prisma.conversationRead.upsert({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+      create: {
+        conversationId,
+        userId,
+        lastReadAt,
+      },
+      update: {
+        lastReadAt,
+      },
+    });
   }
 }

@@ -429,12 +429,28 @@ export default function MessagesPage() {
   }, [selectedConversationId, accessToken]);
 
   useEffect(() => {
-    if (!selectedConversationId || !user?.id || !selectedConversationSeenAt) {
+    if (!selectedConversationId || !accessToken || !selectedConversationSeenAt) {
       return;
     }
 
-    markConversationSeen(user.id, selectedConversationId, selectedConversationSeenAt);
-  }, [selectedConversationId, selectedConversationSeenAt, user?.id]);
+    void markConversationSeen(
+      selectedConversationId,
+      accessToken,
+      selectedConversationSeenAt,
+    )
+      .then((result) => {
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.id === selectedConversationId
+              ? { ...conversation, lastReadAt: result.lastReadAt }
+              : conversation,
+          ),
+        );
+      })
+      .catch(() => {
+        // read receipts are best-effort and should not block chat UI
+      });
+  }, [selectedConversationId, selectedConversationSeenAt, accessToken]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { SupabaseAuthGuard } from '../auth/supabase.guard';
 import type { AuthenticatedRequest } from '../auth/auth-request.interface';
 import { UpdateProductStatusDto } from './dto/update-product-status.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { QueryProductsDto } from './dto/query-products.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -27,8 +29,8 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() query?: QueryProductsDto) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')
