@@ -2,11 +2,13 @@
 
 import { FormEvent, useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { MessageCircle, Search, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { UserContext } from "../../context/user-context";
 import { SearchContext } from "../../context/search-context";
+import secondsyLogo from "../../assets/images/secondsy.png";
 import { getConversations } from "../../lib/api/message";
 import {
   getUnreadConversationsCount,
@@ -100,8 +102,16 @@ export default function Header() {
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:gap-4">
         <Link
           href="/"
-          className="shrink-0 whitespace-nowrap text-[1.3rem] font-extrabold tracking-tight text-slate-900 transition-colors hover:text-slate-600"
+          className="flex shrink-0 items-center  whitespace-nowrap text-[1.3rem] font-extrabold tracking-tight text-slate-900 transition-colors hover:text-slate-600"
         >
+          <Image
+            src={secondsyLogo}
+            alt="Secondsy logo"
+            width={50}
+            height={50}
+            className="h-7 w-7 rounded-md object-cover"
+            priority
+          />
           Secondsy
         </Link>
 

@@ -697,7 +697,7 @@ export default function MessagesPage() {
                             {previewText}
                           </p>
                           <p className="mt-1 line-clamp-1 text-[11px] font-medium text-blue-700/90">
-                            Re: {productTitle}
+                            product: {productTitle}
                           </p>
                         </div>
 
