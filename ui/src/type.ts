@@ -125,11 +125,3 @@ export type ConversationProductInfo = {
   price?: number;
   location?: string;
 };
-
-export type SavedProduct = {
-  id: string;
-  title: string;
-  price: number | string;
-  images?: string[];
-  location?: string;
-};
