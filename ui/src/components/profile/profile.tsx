@@ -21,32 +21,10 @@ import {
   getProducts,
   updateProductStatus,
 } from "../../lib/api/product";
+import type { Ad, ProductApiItem, ProductStatus } from "../../type";
 import { UserContext } from "../../context/user-context";
 import PageLoader from "../ui/page-loader";
 import DeleteModal from "../modal/DeleteModal";
-
-type Status = "Active" | "Sold" | "Expired";
-type Ad = {
-  id: string;
-  title: string;
-  price: number;
-  status: Status;
-  images: string[];
-  location: string;
-  createdAt: string;
-  userId: string;
-};
-
-type ProductApiItem = {
-  id: string;
-  title: string;
-  price: number | string;
-  status: Status;
-  images: string[];
-  location: string;
-  createdAt: string;
-  userId: string;
-};
 
 export default function MyAdsPage() {
   const router = useRouter();
@@ -90,7 +68,7 @@ export default function MyAdsPage() {
             id: product.id,
             title: product.title,
             price: Number(product.price) || 0,
-            status: (product.status as Status) || "Active",
+            status: (product.status as ProductStatus) || "Active",
             images: Array.isArray(product.images) ? product.images : [],
             location: product.location || "",
             createdAt: product.createdAt || "",
@@ -195,7 +173,7 @@ export default function MyAdsPage() {
     });
   };
 
-  const getBadgeClass = (status: Status) =>
+  const getBadgeClass = (status: ProductStatus) =>
     `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
       status === "Sold"
         ? "bg-slate-200 text-slate-700"

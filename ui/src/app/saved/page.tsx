@@ -9,9 +9,9 @@ import { UserContext } from "../../context/user-context";
 import {
   getSavedProducts,
   removeSavedProduct,
-  SavedProduct,
   SAVED_PRODUCTS_UPDATED_EVENT,
 } from "../../lib/saved-products";
+import type { SavedProduct } from "../../type";
 
 type SavedItem = Pick<
   SavedProduct,

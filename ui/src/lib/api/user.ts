@@ -1,23 +1,10 @@
+import type { SyncUserPayload, UserProfile } from "../../type";
 const publicApiBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
 export const API_URL = (publicApiBaseUrl || "http://localhost:3001").replace(
   /\/$/,
   "",
 );
-
-export type UserProfile = {
-  id: string;
-  supabaseId: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  createdAt: string;
-};
-
-type SyncUserPayload = {
-  firstName?: string;
-  lastName?: string;
-};
 
 export const syncCurrentUser = async (
   accessToken: string,

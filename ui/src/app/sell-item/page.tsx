@@ -15,10 +15,7 @@ import {
 } from "../../lib/api/product";
 import { uploadImageToCloudinary } from "../../lib/cloudinary";
 import { getCategories } from "../../lib/api/category";
-import {
-  categories as fallbackCategories,
-  type Category,
-} from "../../data/categories";
+import { categories as fallbackCategories } from "../../data/categories";
 import {
   useState,
   ChangeEvent,
@@ -31,26 +28,7 @@ import { toast } from "react-toastify";
 import { Input } from "../../components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageLoader from "../../components/ui/page-loader";
-
-/* ================= TYPES ================= */
-
-type ConditionType = "New" | "Like New" | "Good" | "Fair";
-
-export type SellFormData = {
-  title: string;
-  category: string;
-  subcategory: string;
-  tags: string[];
-  price: number | "";
-  condition: ConditionType | "";
-  description: string;
-  email: string;
-  phone: string;
-  location: string;
-  deliveryPickup: boolean;
-  deliveryShipping: boolean;
-  images: string[];
-};
+import type { Category, ConditionType, SellFormData } from "../../type";
 
 type CategoryMap = Record<string, string[]>;
 

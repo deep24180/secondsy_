@@ -1,4 +1,4 @@
-import { Conversation } from "./api/message";
+import type { Conversation } from "../type";
 
 const STORAGE_KEY_PREFIX = "secondsy_message_seen_v1:";
 export const MESSAGE_READ_EVENT = "secondsy:message-read";

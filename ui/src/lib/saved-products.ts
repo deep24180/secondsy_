@@ -1,14 +1,7 @@
 import { API_URL } from "./api/user";
+import type { SavedProduct } from "../type";
 
 export const SAVED_PRODUCTS_UPDATED_EVENT = "secondsy:saved-products-updated";
-
-export type SavedProduct = {
-  id: string;
-  title: string;
-  price: number | string;
-  images?: string[];
-  location?: string;
-};
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();

@@ -1,25 +1,5 @@
 import Link from "next/link";
-
-export type Product = {
-  id: string;
-  title: string;
-  category: string;
-  subcategory: string;
-  tags?: string[];
-  sold?: boolean;
-  status?: "Active" | "Sold" | "Expired" | string;
-  price: number;
-  condition: string;
-  description: string;
-  images: string[];
-  email: string;
-  phone: string;
-  location: string;
-  deliveryPickup: boolean;
-  deliveryShipping: boolean;
-  userId: string;
-  createdAt: Date;
-};
+import type { Product } from "../../type";
 type ProductCardProps = {
   product: Product;
 };

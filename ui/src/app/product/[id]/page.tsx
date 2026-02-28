@@ -4,7 +4,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getProductById } from "../../../lib/api/product";
-import type { Product } from "../../../components/product/ProductCard";
+import type { Product } from "../../../type";
 import { Button } from "../../../components/ui/button";
 import { UserContext } from "../../../context/user-context";
 import {

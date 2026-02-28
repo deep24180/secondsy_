@@ -7,8 +7,8 @@ import { ToastContainer } from "react-toastify";
 import {
   getCurrentUserProfile,
   syncCurrentUser,
-  UserProfile,
 } from "../lib/api/user";
+import type { UserProfile } from "../type";
 import "react-toastify/dist/ReactToastify.css";
 import CompleteProfileModal from "../components/modal/CompleteProfileModal";
 

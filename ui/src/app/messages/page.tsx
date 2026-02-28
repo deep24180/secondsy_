@@ -17,14 +17,17 @@ import { Button } from "../../components/ui/button";
 import PageLoader from "../../components/ui/page-loader";
 import { UserContext } from "../../context/user-context";
 import {
-  ChatMessage,
-  Conversation,
-  ConversationUser,
   getConversationMessages,
   getConversations,
   sendConversationMessage,
   startConversation,
 } from "../../lib/api/message";
+import type {
+  ChatMessage,
+  Conversation,
+  ConversationProductInfo,
+  ConversationUser,
+} from "../../type";
 import { API_URL } from "../../lib/api/user";
 import { markConversationSeen } from "../../lib/message-unread";
 import {
@@ -35,14 +38,6 @@ import {
 import { Input } from "../../components/ui/input";
 import ImagePreviewModal from "../../components/modal/ImagePreviewModal";
 import { getProductById } from "../../lib/api/product";
-
-type ConversationProductInfo = {
-  id: string;
-  title: string;
-  images: string[];
-  price?: number;
-  location?: string;
-};
 
 const formatPriceINR = (price: number) =>
   new Intl.NumberFormat("en-IN", {

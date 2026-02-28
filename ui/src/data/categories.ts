@@ -1,9 +1,4 @@
-export type Category = {
-  id: number;
-  name: string;
-  icon: string;
-  subcategories: string[];
-};
+import type { Category } from "../type";
 
 export const categories: Category[] = [
   {

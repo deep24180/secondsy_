@@ -1,40 +1,5 @@
+import type { ChatMessage, Conversation } from "../../type";
 import { API_URL } from "./user";
-
-export type ConversationUser = {
-  supabaseId: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-};
-
-export type Conversation = {
-  id: string;
-  productId: string;
-  participantAId: string;
-  participantBId: string;
-  participantA?: ConversationUser | null;
-  participantB?: ConversationUser | null;
-  lastMessageAt?: string | null;
-  createdAt: string;
-  messages?: ConversationLatestMessage[];
-};
-
-export type ConversationLatestMessage = {
-  id: string;
-  senderId: string;
-  sender?: ConversationUser | null;
-  content: string;
-  createdAt: string;
-};
-
-export type ChatMessage = {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  sender?: ConversationUser | null;
-  content: string;
-  createdAt: string;
-};
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
