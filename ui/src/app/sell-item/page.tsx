@@ -414,7 +414,7 @@ export default function SellPage() {
   };
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const PHONE_REGEX = /^[6-9]\d{9}$/;
+  const PHONE_REGEX = /^[1-9]\d{9}$/;
 
   const inputClass =
     "h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20";
