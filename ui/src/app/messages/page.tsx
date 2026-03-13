@@ -158,7 +158,9 @@ export default function MessagesPage() {
   );
   const selectedConversationProduct = useMemo(
     () =>
-      selectedConversation ? productsById[selectedConversation.productId] : null,
+      selectedConversation
+        ? productsById[selectedConversation.productId]
+        : null,
     [productsById, selectedConversation],
   );
 
@@ -183,11 +185,7 @@ export default function MessagesPage() {
     }
 
     return new Date().toISOString();
-  }, [
-    selectedConversationId,
-    selectedConversation,
-    messagesByConversation,
-  ]);
+  }, [selectedConversationId, selectedConversation, messagesByConversation]);
 
   const filteredConversations = useMemo(() => {
     const keyword = conversationSearch.trim().toLowerCase();
@@ -254,7 +252,8 @@ export default function MessagesPage() {
             return new Date(bLast).getTime() - new Date(aLast).getTime();
           });
           const matchingConversation = sorted.find((conversation) => {
-            if (!productId || conversation.productId !== productId) return false;
+            if (!productId || conversation.productId !== productId)
+              return false;
             if (!sellerId) return true;
 
             return (
@@ -263,9 +262,7 @@ export default function MessagesPage() {
             );
           });
           const firstId = sorted[0].id;
-          setSelectedConversationId(
-            matchingConversation?.id || firstId,
-          );
+          setSelectedConversationId(matchingConversation?.id || firstId);
         }
       } catch (err) {
         if (!mounted) return;
@@ -303,26 +300,27 @@ export default function MessagesPage() {
     Promise.all(
       missingProductIds.map(
         async (id): Promise<ConversationProductInfo | null> => {
-        try {
-          const product = await getProductById(id);
+          try {
+            const product = await getProductById(id);
 
-          if (!product?.id) return null;
+            if (!product?.id) return null;
 
-          return {
-            id: product.id,
-            title: product.title || "Untitled Product",
-            images: Array.isArray(product.images) ? product.images : [],
-            price:
-              typeof product.price === "number" ? product.price : undefined,
-            location:
-              typeof product.location === "string"
-                ? product.location
-                : undefined,
-          };
-        } catch {
-          return null;
-        }
-      }),
+            return {
+              id: product.id,
+              title: product.title || "Untitled Product",
+              images: Array.isArray(product.images) ? product.images : [],
+              price:
+                typeof product.price === "number" ? product.price : undefined,
+              location:
+                typeof product.location === "string"
+                  ? product.location
+                  : undefined,
+            };
+          } catch {
+            return null;
+          }
+        },
+      ),
     ).then((products) => {
       if (!mounted) return;
 
@@ -428,7 +426,11 @@ export default function MessagesPage() {
   }, [selectedConversationId, accessToken]);
 
   useEffect(() => {
-    if (!selectedConversationId || !accessToken || !selectedConversationSeenAt) {
+    if (
+      !selectedConversationId ||
+      !accessToken ||
+      !selectedConversationSeenAt
+    ) {
       return;
     }
 
@@ -446,9 +448,7 @@ export default function MessagesPage() {
           ),
         );
       })
-      .catch(() => {
-        // read receipts are best-effort and should not block chat UI
-      });
+      .catch(() => {});
   }, [selectedConversationId, selectedConversationSeenAt, accessToken]);
 
   useEffect(() => {
@@ -631,9 +631,7 @@ export default function MessagesPage() {
                     partnerProfile,
                     partnerId,
                   );
-                  const partnerInitial = partnerName
-                    .slice(0, 1)
-                    .toUpperCase();
+                  const partnerInitial = partnerName.slice(0, 1).toUpperCase();
                   const lastMessage = getConversationLatestMessage(
                     conversation,
                     messagesByConversation,
@@ -744,8 +742,14 @@ export default function MessagesPage() {
                         </p>
                         <p className="text-sm font-semibold text-slate-900">
                           {getUserDisplayName(
-                            getConversationPartner(selectedConversation, user.id),
-                            getConversationPartnerId(selectedConversation, user.id),
+                            getConversationPartner(
+                              selectedConversation,
+                              user.id,
+                            ),
+                            getConversationPartnerId(
+                              selectedConversation,
+                              user.id,
+                            ),
                           )}
                         </p>
                       </div>
@@ -785,7 +789,8 @@ export default function MessagesPage() {
                       <p className="line-clamp-1 text-sm font-semibold text-slate-900">
                         {selectedConversationProduct?.title || "View product"}
                       </p>
-                      {typeof selectedConversationProduct?.price === "number" ? (
+                      {typeof selectedConversationProduct?.price ===
+                      "number" ? (
                         <p className="text-xs font-semibold text-slate-700">
                           {formatPriceINR(selectedConversationProduct.price)}
                         </p>

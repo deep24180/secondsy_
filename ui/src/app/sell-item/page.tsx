@@ -53,7 +53,8 @@ export default function SellPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = Boolean(editId);
-  const sellPath = isEditMode && editId ? `/sell-item?edit=${editId}` : "/sell-item";
+  const sellPath =
+    isEditMode && editId ? `/sell-item?edit=${editId}` : "/sell-item";
   const loginRedirectPath = `/auth/login?redirect=${encodeURIComponent(sellPath)}`;
 
   const [formData, setFormData] = useState<SellFormData>(getInitialFormData);
@@ -522,7 +523,7 @@ export default function SellPage() {
                     />
                   </SelectTrigger>
 
-                  <SelectContent> 
+                  <SelectContent>
                     {formData.category &&
                       CATEGORY_MAP[formData.category]?.map((sub) => (
                         <SelectItem key={sub} value={sub}>

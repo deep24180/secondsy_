@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { categories as fallbackCategories } from "../../data/categories";
 import type { Category } from "../../type";
 import { getCategories } from "../../lib/api/category";
 import CategoryCard from "./CategoryCard";
 
-export default function CategoriesSection() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+type CategoriesSectionProps = {
+  activeCategory: string;
+  onCategoryChange: (categoryName: string) => void;
+  onSelectAll: () => void;
+};
+
+export default function CategoriesSection({
+  activeCategory,
+  onCategoryChange,
+  onSelectAll,
+}: CategoriesSectionProps) {
   const sliderRef = useRef<HTMLDivElement | null>(null);
-  const activeCategory = (searchParams.get("category") || "").trim();
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
 
   useEffect(() => {
@@ -23,43 +28,6 @@ export default function CategoriesSection() {
 
     loadCategories();
   }, []);
-
-  const updateCategory = (categoryName: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const isSameCategory =
-      activeCategory.toLowerCase() === categoryName.toLowerCase();
-
-    if (isSameCategory) {
-      params.delete("category");
-    } else {
-      params.set("category", categoryName);
-    }
-    // Category changes should reset dependent filters.
-    params.delete("subcategory");
-    params.delete("tag");
-
-    const nextQuery = params.toString();
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-    router.replace(nextUrl, { scroll: false });
-  };
-
-  const selectAllCategories = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    const hadCategoryFilters =
-      params.has("category") || params.has("subcategory") || params.has("tag");
-
-    if (!hadCategoryFilters) {
-      return;
-    }
-
-    params.delete("category");
-    params.delete("subcategory");
-    params.delete("tag");
-
-    const nextQuery = params.toString();
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-    router.replace(nextUrl, { scroll: false });
-  };
 
   const scrollCategories = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
@@ -107,7 +75,7 @@ export default function CategoriesSection() {
               name="All Categories"
               icon="apps"
               isActive={!activeCategory}
-              onClick={selectAllCategories}
+              onClick={onSelectAll}
             />
           </div>
           {categories.map((cat) => (
@@ -115,7 +83,7 @@ export default function CategoriesSection() {
               <CategoryCard
                 {...cat}
                 isActive={activeCategory.toLowerCase() === cat.name.toLowerCase()}
-                onClick={() => updateCategory(cat.name)}
+                onClick={() => onCategoryChange(cat.name)}
               />
             </div>
           ))}

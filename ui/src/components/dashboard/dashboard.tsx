@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SearchContext } from "../../context/search-context";
 import CategoriesSection from "../category/CategoriesSection";
 import { getProducts } from "../../lib/api/product";
@@ -20,28 +20,89 @@ import ProductCard from "../product/ProductCard";
 const PRODUCTS_PER_PAGE = 8;
 
 export default function Dashboard() {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { query } = useContext(SearchContext);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFetchingProducts, setIsFetchingProducts] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [totalMatching, setTotalMatching] = useState(0);
+  const [selectedCategoryParam, setSelectedCategoryParam] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return (new URLSearchParams(window.location.search).get("category") || "").trim();
+  });
+  const [selectedSubcategoryParam, setSelectedSubcategoryParam] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return (
+      new URLSearchParams(window.location.search).get("subcategory") || ""
+    ).trim();
+  });
+  const [selectedTagParam, setSelectedTagParam] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return (new URLSearchParams(window.location.search).get("tag") || "").trim();
+  });
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const previousFilterKeyRef = useRef("");
+  const hasLoadedOnceRef = useRef(false);
   const normalizedQuery = query.trim().toLowerCase();
-  const selectedCategoryParam = (searchParams.get("category") || "").trim();
-  const selectedSubcategoryParam = (searchParams.get("subcategory") || "").trim();
-  const selectedTagParam = (searchParams.get("tag") || "").trim();
 
   const selectedCategory = selectedCategoryParam.toLowerCase();
   const selectedSubcategory = selectedSubcategoryParam.toLowerCase();
   const selectedTag = selectedTagParam.toLowerCase();
   const filterKey = `${normalizedQuery}::${selectedCategory}::${selectedSubcategory}::${selectedTag}`;
+
+  useEffect(() => {
+    const syncFromLocation = () => {
+      const params = new URLSearchParams(window.location.search);
+      setSelectedCategoryParam((params.get("category") || "").trim());
+      setSelectedSubcategoryParam((params.get("subcategory") || "").trim());
+      setSelectedTagParam((params.get("tag") || "").trim());
+    };
+
+    window.addEventListener("popstate", syncFromLocation);
+    return () => {
+      window.removeEventListener("popstate", syncFromLocation);
+    };
+  }, []);
+
+  const updateUrlParams = (updates: {
+    category?: string;
+    subcategory?: string;
+    tag?: string;
+  }) => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (updates.category !== undefined) {
+      if (updates.category) {
+        params.set("category", updates.category);
+      } else {
+        params.delete("category");
+      }
+    }
+
+    if (updates.subcategory !== undefined) {
+      if (updates.subcategory) {
+        params.set("subcategory", updates.subcategory);
+      } else {
+        params.delete("subcategory");
+      }
+    }
+
+    if (updates.tag !== undefined) {
+      if (updates.tag) {
+        params.set("tag", updates.tag);
+      } else {
+        params.delete("tag");
+      }
+    }
+
+    const queryString = params.toString();
+    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    window.history.replaceState(null, "", nextUrl);
+  };
 
   const categoryMatches = useCallback(
     (productCategory: string) =>
@@ -168,11 +229,14 @@ export default function Dashboard() {
     }
 
     previousFilterKeyRef.current = filterKey;
-    const isFirstPaintLoad = page === 1 && products.length === 0;
+    const isFirstPaintLoad =
+      page === 1 && products.length === 0 && !hasLoadedOnceRef.current;
 
     const fetchProducts = async () => {
       if (isFirstPaintLoad) {
         setIsFetchingProducts(true);
+      } else if (page === 1) {
+        setIsRefreshing(true);
       } else if (page > 1) {
         setIsLoadingMore(true);
       }
@@ -203,6 +267,9 @@ export default function Dashboard() {
         if (!mounted) return;
         if (isFirstPaintLoad) {
           setIsFetchingProducts(false);
+          hasLoadedOnceRef.current = true;
+        } else if (page === 1) {
+          setIsRefreshing(false);
         } else if (page > 1) {
           setIsLoadingMore(false);
         }
@@ -250,37 +317,43 @@ export default function Dashboard() {
   const updateTagFilter = (tag: string) => {
     const nextTag = tag.trim();
     const nextTagNormalized = nextTag.toLowerCase();
-    const params = new URLSearchParams(searchParams.toString());
+    const nextTagValue =
+      selectedTag === nextTagNormalized ? "" : nextTag;
 
-    if (selectedTag === nextTagNormalized) {
-      params.delete("tag");
-    } else {
-      params.set("tag", nextTag);
-    }
-
-    const queryString = params.toString();
-    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(nextUrl, { scroll: false });
+    setSelectedTagParam(nextTagValue);
+    updateUrlParams({ tag: nextTagValue });
   };
 
   const updateSubcategoryFilter = (subcategory: string) => {
     const nextSubcategory = subcategory.trim();
     const nextSubcategoryNormalized = nextSubcategory.toLowerCase();
-    const params = new URLSearchParams(searchParams.toString());
+    const nextSubcategoryValue =
+      selectedSubcategory === nextSubcategoryNormalized ? "" : nextSubcategory;
 
-    if (selectedSubcategory === nextSubcategoryNormalized) {
-      params.delete("subcategory");
-    } else {
-      params.set("subcategory", nextSubcategory);
-    }
-
-    const queryString = params.toString();
-    const nextUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(nextUrl, { scroll: false });
+    setSelectedSubcategoryParam(nextSubcategoryValue);
+    updateUrlParams({ subcategory: nextSubcategoryValue });
   };
 
   const clearAllFilters = () => {
-    router.replace(pathname, { scroll: false });
+    setSelectedCategoryParam("");
+    setSelectedSubcategoryParam("");
+    setSelectedTagParam("");
+    updateUrlParams({ category: "", subcategory: "", tag: "" });
+  };
+
+  const handleCategoryChange = (categoryName: string) => {
+    const isSameCategory =
+      selectedCategory === categoryName.toLowerCase();
+    const nextCategoryValue = isSameCategory ? "" : categoryName;
+
+    setSelectedCategoryParam(nextCategoryValue);
+    setSelectedSubcategoryParam("");
+    setSelectedTagParam("");
+    updateUrlParams({
+      category: nextCategoryValue,
+      subcategory: "",
+      tag: "",
+    });
   };
 
   if (isFetchingProducts && products.length === 0) {
@@ -363,7 +436,11 @@ export default function Dashboard() {
         </section>
 
         <section className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-[0_22px_60px_-45px_rgba(15,23,42,0.55)] sm:p-6">
-          <CategoriesSection />
+          <CategoriesSection
+            activeCategory={selectedCategoryParam}
+            onCategoryChange={handleCategoryChange}
+            onSelectAll={clearAllFilters}
+          />
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
@@ -507,10 +584,18 @@ export default function Dashboard() {
                   search context.
                 </p>
               </div>
-              <p className="rounded-full border border-teal-100 bg-teal-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
-                {filteredProducts.length} matching item
-                {filteredProducts.length === 1 ? "" : "s"}
-              </p>
+              <div className="flex items-center gap-3">
+                {isRefreshing ? (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+                    Updating
+                  </span>
+                ) : null}
+                <p className="rounded-full border border-teal-100 bg-teal-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
+                  {filteredProducts.length} matching item
+                  {filteredProducts.length === 1 ? "" : "s"}
+                </p>
+              </div>
             </div>
 
             {hasActiveFilters ? (
