@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useContext, useEffect, useState } from "react";
+import { FormEvent, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,6 +24,8 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const refreshInFlightRef = useRef(false);
+  const hasLoadedUnreadRef = useRef(false);
 
   useEffect(() => {
     setSearchTerm(query);
@@ -34,10 +36,20 @@ export default function Header() {
       setUnreadCount(0);
       return;
     }
+    if (pathname === "/messages") {
+      setUnreadCount(0);
+      return;
+    }
+    if (hasLoadedUnreadRef.current) {
+      return;
+    }
 
     let active = true;
 
     const refreshUnreadCount = async () => {
+      if (refreshInFlightRef.current) return;
+      refreshInFlightRef.current = true;
+
       try {
         const conversations = await getConversations(accessToken);
         if (!active) return;
@@ -47,26 +59,20 @@ export default function Header() {
         if (active) {
           setUnreadCount(0);
         }
+      } finally {
+        refreshInFlightRef.current = false;
       }
     };
 
-    void refreshUnreadCount();
-
-    const handleReadEvent = () => {
-      void refreshUnreadCount();
-    };
-
-    window.addEventListener(MESSAGE_READ_EVENT, handleReadEvent);
-    const intervalId = window.setInterval(() => {
-      void refreshUnreadCount();
-    }, 30000);
+    void refreshUnreadCount().then(() => {
+      hasLoadedUnreadRef.current = true;
+    });
 
     return () => {
       active = false;
-      window.clearInterval(intervalId);
-      window.removeEventListener(MESSAGE_READ_EVENT, handleReadEvent);
+      refreshInFlightRef.current = false;
     };
-  }, [user?.id, accessToken]);
+  }, [user?.id, accessToken, pathname]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
