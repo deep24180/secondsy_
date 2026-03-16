@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,15 +27,63 @@ import { UserContext } from "../../context/user-context";
 import PageLoader from "../ui/page-loader";
 import DeleteModal from "../modal/DeleteModal";
 
+const TABS = ["All", "Active", "Sold", "Expired"] as const;
+type Tab = (typeof TABS)[number];
+
+const PER_PAGE = 3;
+
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
+const formatDate = (value: string) => {
+  if (!value) return "Unknown date";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Unknown date";
+  return parsed.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const getBadgeClass = (status: ProductStatus) =>
+  `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+    status === "Sold"
+      ? "bg-slate-200 text-slate-700"
+      : status === "Expired"
+        ? "bg-amber-100 text-amber-700"
+        : "bg-blue-100 text-blue-700"
+  }`;
+
+const mapProductsToAds = (products: any[], userId: string): Ad[] =>
+  products
+    .filter((product) => product.userId === userId)
+    .map((product) => ({
+      id: product.id,
+      title: product.title,
+      price: Number(product.price) || 0,
+      status: (product.status as ProductStatus) || "Active",
+      images: Array.isArray(product.images) ? product.images : [],
+      location: product.location || "",
+      createdAt:
+        typeof product.createdAt === "string"
+          ? product.createdAt
+          : product.createdAt instanceof Date
+            ? product.createdAt.toISOString()
+            : "",
+      userId: product.userId,
+    }));
+
 export default function MyAdsPage() {
   const router = useRouter();
   const { user, logout, accessToken, loading } = useContext(UserContext);
 
-  const [activeTab, setActiveTab] = useState<
-    "All" | "Active" | "Sold" | "Expired"
-  >("All");
+  const [activeTab, setActiveTab] = useState<Tab>("All");
   const [page, setPage] = useState(1);
-  const PER_PAGE = 3;
 
   const [ads, setAds] = useState<Ad[]>([]);
   const [loadingAds, setLoadingAds] = useState(true);
@@ -44,49 +92,46 @@ export default function MyAdsPage() {
   const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const loadAds = async () => {
       if (!user?.id) {
-        setAds([]);
-        setLoadingAds(false);
+        if (mounted) {
+          setAds([]);
+          setLoadingAds(false);
+        }
         return;
       }
 
-      setLoadingAds(true);
-      setError(null);
+      if (mounted) {
+        setLoadingAds(true);
+        setError(null);
+      }
 
       try {
         const response = await getProducts({ userId: user.id });
         const typedProducts = response.data;
-
-        const mappedAds = typedProducts
-          .filter((product) => product.userId === user.id)
-          .map((product) => ({
-            id: product.id,
-            title: product.title,
-            price: Number(product.price) || 0,
-            status: (product.status as ProductStatus) || "Active",
-            images: Array.isArray(product.images) ? product.images : [],
-            location: product.location || "",
-            createdAt:
-              typeof product.createdAt === "string"
-                ? product.createdAt
-                : product.createdAt instanceof Date
-                  ? product.createdAt.toISOString()
-                  : "",
-            userId: product.userId,
-          }));
-
-        setAds(mappedAds);
+        if (mounted) {
+          setAds(mapProductsToAds(typedProducts, user.id));
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load products.",
-        );
+        if (mounted) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load products.",
+          );
+        }
       } finally {
-        setLoadingAds(false);
+        if (mounted) {
+          setLoadingAds(false);
+        }
       }
     };
 
     loadAds();
+
+    return () => {
+      mounted = false;
+    };
   }, [user?.id]);
 
   const filteredAds = useMemo(
@@ -95,46 +140,63 @@ export default function MyAdsPage() {
     [activeTab, ads],
   );
 
+  const adStats = useMemo(
+    () => ({
+      total: ads.length,
+      active: ads.filter((ad) => ad.status === "Active").length,
+    }),
+    [ads],
+  );
+
   const totalPages = Math.max(1, Math.ceil(filteredAds.length / PER_PAGE));
   const paginatedAds = filteredAds.slice(
     (page - 1) * PER_PAGE,
     page * PER_PAGE,
   );
 
-  const markSold = async (id: string) => {
-    if (!accessToken) return;
-    await updateProductStatus(id, "Sold", accessToken);
-    setAds((prev) =>
-      prev.map((ad) => (ad.id === id ? { ...ad, status: "Sold" } : ad)),
-    );
-  };
+  const markSold = useCallback(
+    async (id: string) => {
+      if (!accessToken) return;
+      await updateProductStatus(id, "Sold", accessToken);
+      setAds((prev) =>
+        prev.map((ad) => (ad.id === id ? { ...ad, status: "Sold" } : ad)),
+      );
+    },
+    [accessToken],
+  );
 
-  const relist = async (id: string) => {
-    if (!accessToken) return;
-    await updateProductStatus(id, "Active", accessToken);
-    setAds((prev) =>
-      prev.map((ad) => (ad.id === id ? { ...ad, status: "Active" } : ad)),
-    );
-  };
+  const relist = useCallback(
+    async (id: string) => {
+      if (!accessToken) return;
+      await updateProductStatus(id, "Active", accessToken);
+      setAds((prev) =>
+        prev.map((ad) => (ad.id === id ? { ...ad, status: "Active" } : ad)),
+      );
+    },
+    [accessToken],
+  );
 
-  const expireAd = async (id: string) => {
-    if (!accessToken) return;
-    await updateProductStatus(id, "Expired", accessToken);
-    setAds((prev) =>
-      prev.map((ad) => (ad.id === id ? { ...ad, status: "Expired" } : ad)),
-    );
-  };
+  const expireAd = useCallback(
+    async (id: string) => {
+      if (!accessToken) return;
+      await updateProductStatus(id, "Expired", accessToken);
+      setAds((prev) =>
+        prev.map((ad) => (ad.id === id ? { ...ad, status: "Expired" } : ad)),
+      );
+    },
+    [accessToken],
+  );
 
-  const requestRemove = (ad: Ad) => {
+  const requestRemove = useCallback((ad: Ad) => {
     setAdToDelete(ad);
-  };
+  }, []);
 
-  const closeDeleteModal = () => {
+  const closeDeleteModal = useCallback(() => {
     if (deletingAdId) return;
     setAdToDelete(null);
-  };
+  }, [deletingAdId]);
 
-  const confirmRemove = async () => {
+  const confirmRemove = useCallback(async () => {
     if (!accessToken || !adToDelete) return;
 
     setDeletingAdId(adToDelete.id);
@@ -151,50 +213,42 @@ export default function MyAdsPage() {
     } finally {
       setDeletingAdId(null);
     }
-  };
+  }, [accessToken, adToDelete]);
 
-  const changeTab = (tab: "All" | "Active" | "Sold" | "Expired") => {
+  const changeTab = useCallback((tab: Tab) => {
     setActiveTab(tab);
     setPage(1);
-  };
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    router.push("/auth/login");
+  }, [logout, router]);
+
+  const goToSell = useCallback(() => {
+    router.push("/sell-item");
+  }, [router]);
+
+  const goToEdit = useCallback(
+    (id: string) => {
+      router.push(`/sell-item?edit=${id}`);
+    },
+    [router],
+  );
+
+  const goToPrevPage = useCallback(() => {
+    setPage((p) => p - 1);
+  }, []);
+
+  const goToNextPage = useCallback(() => {
+    setPage((p) => p + 1);
+  }, []);
 
   useEffect(() => {
     if (page > totalPages) {
       setPage(1);
     }
   }, [page, totalPages]);
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(price);
-
-  const formatDate = (value: string) => {
-    if (!value) return "Unknown date";
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return "Unknown date";
-    return parsed.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getBadgeClass = (status: ProductStatus) =>
-    `inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-      status === "Sold"
-        ? "bg-slate-200 text-slate-700"
-        : status === "Expired"
-          ? "bg-amber-100 text-amber-700"
-          : "bg-blue-100 text-blue-700"
-    }`;
-
-  const handleLogout = async () => {
-    await logout();
-    router.push("/auth/login");
-  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -266,7 +320,7 @@ export default function MyAdsPage() {
                 </p>
               </div>
               <Button
-                onClick={() => router.push("/sell-item")}
+                onClick={goToSell}
                 type="button"
                 className="h-11 rounded-xl bg-blue-600 px-6 font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
@@ -276,22 +330,20 @@ export default function MyAdsPage() {
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
-                {ads.length} total
+                {adStats.total} total
               </span>
               <span className="rounded-full bg-blue-100 px-3 py-1 font-semibold text-blue-700">
-                {ads.filter((ad) => ad.status === "Active").length} active
+                {adStats.active} active
               </span>
             </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-sm">
             <div className="flex gap-2 overflow-x-auto">
-              {["All", "Active", "Sold", "Expired"].map((tab) => (
+              {TABS.map((tab) => (
                 <Button
                   key={tab}
-                  onClick={() =>
-                    changeTab(tab as "All" | "Active" | "Sold" | "Expired")
-                  }
+                  onClick={() => changeTab(tab)}
                   type="button"
                   variant="ghost"
                   className={`rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
@@ -380,9 +432,7 @@ export default function MyAdsPage() {
                       {ad.status === "Active" && (
                         <>
                           <Button
-                            onClick={() =>
-                              router.push(`/sell-item?edit=${ad.id}`)
-                            }
+                            onClick={() => goToEdit(ad.id)}
                             type="button"
                             variant="ghost"
                             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -445,7 +495,7 @@ export default function MyAdsPage() {
             <Button
               title="Previous page"
               disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
+              onClick={goToPrevPage}
               type="button"
               variant="outline"
               className="h-10 w-10 rounded-xl border-slate-200 bg-white/90 text-slate-600 shadow-sm disabled:opacity-40"
@@ -458,7 +508,7 @@ export default function MyAdsPage() {
             <Button
               title="Next page"
               disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={goToNextPage}
               type="button"
               variant="outline"
               className="h-10 w-10 rounded-xl border-slate-200 bg-white/90 text-slate-600 shadow-sm disabled:opacity-40"
